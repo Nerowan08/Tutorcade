@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SAT Math Quest</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+/* ========== 1. 基础变量与重置 ========== */
+:root{
+  --bg:#0d1117;--bg-alt:#161b22;--fg:#e6edf3;--accent:#58a6ff;--accent2:#3fb950;--danger:#f85149;
+  --radius:12px;--shadow:0 3px 8px rgba(0,0,0,.45);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+  font-size:16px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);min-height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ========== 2. 头部导航 ========== */
+header{display:flex;justify-content:space-between;align-items:center;padding:.8rem 1rem;background:var(--bg-alt);box-shadow:var(--shadow);z-index:3}
+header h1{font-size:1.25rem;font-weight:600}
+#navButtons .btn{margin-left:.8rem}
+
+/* ========= 3. 通用按钮 ========= */
+.btn{display:inline-block;padding:.5rem 1rem;border:none;border-radius:var(--radius);font-weight:600;cursor:pointer;color:var(--fg);background:var(--accent)}
+.btn:hover{opacity:.9}
+.btn.alt{background:transparent;border:2px solid var(--accent)}
+.btn.alt:hover{background:var(--accent)}
+.btn.danger{background:var(--danger)}
+
+/* ========= 4. 主内容区域 ========= */
+main{flex:1;position:relative;overflow:hidden}
+.view{position:absolute;inset:0;display:none;padding:1rem}
+.view.active{display:block}
+.center{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;height:100%}
+
+/* ========= 5. Adventure 场景 ========= */
+.worldCard{background:var(--bg-alt);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem;width:260px;cursor:pointer;transition:.3s}
+.worldCard:hover{transform:translateY(-4px)}
+.worldGrid{display:flex;flex-wrap:wrap;gap:1.5rem;justify-content:center;margin-top:2rem}
+.worldCard img{width:100%;border-radius:var(--radius);margin-bottom:.5rem}
+.progressBar{height:6px;background:#30363d;border-radius:4px;margin-top:.5rem}
+.progressBar span{display:block;height:100%;background:var(--accent2);border-radius:4px}
+
+/* ========= 6. 题目面板 ========= */
+#questionPanel{background:var(--bg-alt);border-radius:var(--radius);box-shadow:var(--shadow);padding:1.5rem;max-width:680px;width:100%;margin:0 auto}
+#qText{font-size:1.2rem;margin-bottom:1rem;line-height:1.45}
+#answerInput{width:100%;padding:.75rem 1rem;font-size:1.1rem;border:none;border-radius:var(--radius);background:#22272e;color:var(--fg)}
+#toolsBar{display:flex;gap:.5rem;margin-top:.8rem;flex-wrap:wrap}
+.toolBtn{flex:1 1 110px;background:#30363d;border:none;color:var(--fg);padding:.5rem;border-radius:var(--radius);cursor:pointer;font-size:.9rem}
+.toolBtn:disabled{opacity:.35;cursor:default}
+#timer{font-weight:600;margin-left:auto}
+
+/* ========= 7. Math Duel ========= */
+#duelArena{display:flex;flex-direction:column;align-items:center;gap:1rem}
+.duelBoard{display:flex;gap:2rem}
+.playerBox{background:var(--bg-alt);padding:1rem 1.5rem;border-radius:var(--radius);width:200px;text-align:center}
+.playerBox h3{margin-bottom:.5rem}
+.playerBox[data-turn="true"]{outline:3px solid var(--accent)}
+.duelQ{font-size:1.1rem;margin:1rem 0}
+
+/* ========= 8. 排行榜 ========= */
+#boardTable{width:100%;max-width:480px;border-collapse:collapse;margin-top:1rem}
+#boardTable th,#boardTable td{padding:.6rem .8rem;border-bottom:1px solid #30363d;text-align:left}
+#boardTable tr:first-child td{font-weight:600;color:var(--accent2)}
+.emptyRow{color:#8b949e;text-align:center}
+
+/* ========= 9. Toast / Dialog ========= */
+.toast{position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);background:var(--accent2);padding:.6rem 1.2rem;border-radius:var(--radius);font-weight:600;display:none;z-index:4}
+.dialogMask{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;justify-content:center;align-items:center;z-index:4;display:none}
+.dialog{background:var(--bg);padding:1.5rem;border-radius:var(--radius);max-width:340px;width:90%;box-shadow:var(--shadow);text-align:center}
+
+/* ========= 10. Keyframe 小动画 ========= */
+@keyframes shake{10%,90%{transform:translateX(-1px)}20%,80%{transform:translateX(2px)}30%,50%,70%{transform:translateX(-4px)}40%,60%{transform:translateX(4px)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>SAT Math Quest</h1>
+  <div id="navButtons">
+    <button class="btn" id="btnAdventure">Adventure</button>
+    <button class="btn" id="btnDuel">Math Duel</button>
+    <button class="btn" id="btnBoard">Leaderboard</button>
+    <a href="launcher.html" class="btn alt">Exit ↩</a>
+  </div>
+</header>
+
+<main>
+  <!-- 主页 / 模式选择可直接在 header -->
+  
+  <!-- 1. Adventure 世界地图 -->
+  <section id="adventureView" class="view active">
+    <div class="center">
+      <h2>Select Your World</h2>
+      <div class="worldGrid">
+        <div class="worldCard" data-world="arithmetic">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjYwIiBoZWlnaHQ9IjE1MCIgZmlsbD0ibm9uZSIgdmlld0JveD0iMCAwIDI2MCAxNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjI2MCIgaGVpZ2h0PSIxNTAiIGZpbGw9IiM0YmI3NzEiIHJ4PSIxMiIvPjxjaXJjbGUgY3g9Ijk0IiBjeT0iNzUiIHI9IjMwIiBmaWxsPSIjZmZmIj48L2NpcmNsZT48L3N2Zz4=" alt="Forest">
+          <h3>Arithmetic Forest</h3>
+          <div class="progressBar"><span id="prog-arithmetic" style="width:0%"></span></div>
+        </div>
+        <div class="worldCard" data-world="algebra">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjYwIiBoZWlnaHQ9IjE1MCIgZmlsbD0ibm9uZSIgdmlld0JveD0iMCAwIDI2MCAxNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGxpbmUgeDE9IjAiIHkxPSIxNTAiIHgyPSIyNjAiIHkyPSIwIiBzdHJva2U9IiM3YWQ4ZmYiIHN0cm9rZS13aWR0aD0iMjAiLz48L3N2Zz4=" alt="Tower">
+          <h3>Algebra Tower</h3>
+          <div class="progressBar"><span id="prog-algebra" style="width:0%"></span></div>
+        </div>
+        <div class="worldCard" data-world="geometry">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjYwIiBoZWlnaHQ9IjE1MCIgZmlsbD0ibm9uZSIgdmlld0JveD0iMCAwIDI2MCAxNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgc3Ryb2tlPSIjZmVkMDMzIiBzdHJva2Utd2lkdGg9IjIwIiBmaWxsPSJub25lIj48cGF0aCBkPSJNMTMwIDAgMjYwIDE1MCAwIDE1MHoiLz48L2c+PC9zdmc+" alt="Desert">
+          <h3>Geometry Desert</h3>
+          <div class="progressBar"><span id="prog-geometry" style="width:0%"></span></div>
+        </div>
+        <div class="worldCard" data-world="probability">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjYwIiBoZWlnaHQ9IjE1MCIgZmlsbD0ibm9uZSIgdmlld0JveD0iMCAwIDI2MCAxNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMTMwIiBjeT0iNzUiIHI9IjcwIiBmaWxsPSIjNWFiZmZmIiAvPjwvc3ZnPg==" alt="Harbor">
+          <h3>Probability Harbor</h3>
+          <div class="progressBar"><span id="prog-probability" style="width:0%"></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- 2. 题目播放页（Adventure & Duel 共用） -->
+  <section id="questionView" class="view">
+    <div id="questionPanel">
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem">
+        <h2 id="qTitle">Level 1‑1</h2>
+        <span id="timer">60s</span>
+      </div>
+      <p id="qText">Question text …</p>
+      <input id="answerInput" placeholder="Type answer & hit Enter">
+      <div id="toolsBar">
+        <button class="toolBtn" id="btnHint">Hint 📜</button>
+        <button class="toolBtn" id="btnFreeze">Freeze ⏸</button>
+        <button class="toolBtn" id="btnDouble">2× Score ✨</button>
+      </div>
+    </div>
+  </section>
+  
+  <!-- 3. Math Duel Arena -->
+  <section id="duelView" class="view">
+    <div class="center" id="duelArena">
+      <h2>Math Duel</h2>
+      <div class="duelBoard">
+        <div class="playerBox" id="playerA"><h3>Player A</h3><div>Score <span>0</span></div></div>
+        <div class="playerBox" id="playerB"><h3>Player B</h3><div>Score <span>0</span></div></div>
+      </div>
+      <p class="duelQ" id="duelQ">Loading…</p>
+      <p>Controls — A / D + W | ← / → + ↑</p>
+      <button class="btn alt" id="duelExit">Back</button>
+    </div>
+  </section>
+  
+  <!-- 4. Leaderboard -->
+  <section id="boardView" class="view">
+    <div class="center">
+      <h2>Leaderboard</h2>
+      <table id="boardTable">
+        <thead><tr><th>#</th><th>Name</th><th>Score</th></tr></thead>
+        <tbody id="boardBody"></tbody>
+      </table>
+      <button class="btn alt" id="boardBack">Back</button>
+    </div>
+  </section>
+</main>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Dialog -->
+<div class="dialogMask" id="dialogMask">
+  <div class="dialog" id="dialogBox">
+    <h3 id="dialogTitle">Title</h3>
+    <p id="dialogMsg" style="margin:.8rem 0 1rem"></p>
+    <button class="btn" id="dialogOK">OK</button>
+  </div>
+</div>
+
+<script type="module">
+/* ============ 小工具 ============ */
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+const rand=(min,max)=>Math.floor(Math.random()*(max-min+1))+min;
+function showToast(msg){const t=$('#toast');t.textContent=msg;t.style.display='block';clearTimeout(t._timer);t._timer=setTimeout(()=>t.style.display='none',1800);}
+function showDialog(title,msg,cb){$('#dialogTitle').textContent=title;$('#dialogMsg').innerHTML=msg;$('#dialogMask').style.display='flex';$('#dialogOK').onclick=()=>{cb&&cb();$('#dialogMask').style.display='none';};}
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=rand(0,i);[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+
+/* ============ 全局状态 ============ */
+const state={
+  adventure:{currentWorld:null,level:1,qIndex:0,score:0,lives:3,tools:{hint:1,freeze:1,double:1},timer:60,double:false},
+  duel:{turn:'A',scoreA:0,scoreB:0,timer:90},
+  board:JSON.parse(localStorage.getItem('satBoard')||'[]') // [{name,score}]
+};
+
+/* ============ SAT 题库与生成 ============ */
+const generators={
+  arithmetic(){const a=rand(2,50),b=rand(2,50),op=['+','-','×','÷'][rand(0,3)];let q,ans;
+    switch(op){case '+':q=`${a}+${b}`;ans=a+b;break;case '-':q=`${a}-${b}`;ans=a-b;break;case '×':q=`${a}×${b}`;ans=a*b;break;case '÷':q=`${a*b}÷${a}`;ans=b;}return {q,ans};},
+  algebra(){const a=rand(2,9),x=rand(1,15),b=rand(1,20),c=a*x+b;return{q:`Solve for x: ${a}x+${b}=${c}`,ans:x};},
+  geometry(){const w=rand(3,20),h=rand(3,20);return{q:`Rectangle ${w}×${h}. Area?`,ans:w*h};},
+  probability(){const n=rand(2,6);return{q:`A fair die rolled once. P(roll ≤ ${n})? Give fraction`,ans:`${n}/6`};}
+};
+
+/* ============ UI 视图切换 ============ */
+function switchView(id){$$('.view').forEach(v=>v.classList.remove('active'));$(id).classList.add('active');}
+
+/* ============ Adventure 流程 ============ */
+$('#adventureView').addEventListener('click',e=>{
+  const card=e.target.closest('.worldCard');if(!card)return;
+  state.adventure.currentWorld=card.dataset.world;state.adventure.level=1;state.adventure.qIndex=0;state.adventure.score=0;state.adventure.lives=3;
+  state.adventure.tools={hint:1,freeze:1,double:1};startAdventureLevel();
+});
+function startAdventureLevel(){
+  const s=state.adventure;
+  s.qIndex=0;$('#qTitle').textContent=`${capitalize(s.currentWorld)} Lv.${s.level}`;
+  s.timer=60;renderTools();nextAdventureQuestion();
+  switchView('#questionView');
+  runTimer();
+}
+function nextAdventureQuestion(){
+  const s=state.adventure;if(s.qIndex>=5){levelClear();return;}
+  const g=generators[s.currentWorld]();s.currentQ=g;$('#qText').textContent=g.q;$('#answerInput').value='';$('#answerInput').focus();s.qIndex++;
+}
+function verifyAdventureAnswer(){
+  const s=state.adventure;let ans=$('#answerInput').value.trim();
+  if(ans==='')return;
+  if(s.double){ans=ans*1;} // keep numeric
+  const correct=String(ans).toLowerCase()===String(s.currentQ.ans).toLowerCase();
+  if(correct){s.score+=s.double?20:10;showToast('✔');}
+  else{s.lives--;showToast('✖');shakePanel();if(s.lives<=0){adventureGameOver();return;}}
+  s.double=false;renderTools();nextAdventureQuestion();
+}
+function levelClear(){
+  const s=state.adventure;s.level++;updateProgress();showDialog('Level Clear',`Score +${s.score}<br>Next Level Ready`,()=>{startAdventureLevel();});
+}
+function adventureGameOver(){
+  const s=state.adventure;
+  // save to board
+  const name=prompt('Game Over! Enter Your Name','Guest')||'Guest';
+  state.board.push({name,score:s.score});state.board.sort((a,b)=>b.score-a.score);state.board=state.board.slice(0,20);
+  localStorage.setItem('satBoard',JSON.stringify(state.board));
+  showDialog('Game Over',`Your Score: ${s.score}`,()=>{switchView('#adventureView');});
+}
+function runTimer(){
+  const s=state.adventure;
+  if(!$('#questionView').classList.contains('active'))return;
+  $('#timer').textContent=s.timer+'s';
+  if(s.timer<=0){s.lives--;showToast('⏱');shakePanel();if(s.lives<=0){adventureGameOver();return;}s.timer=60;}
+  else s.timer--;
+  setTimeout(runTimer,1000);
+}
+function renderTools(){
+  const t=state.adventure.tools;
+  $('#btnHint').textContent=`Hint 📜(${t.hint})`;$('#btnHint').disabled=!t.hint;
+  $('#btnFreeze').textContent=`Freeze ⏸(${t.freeze})`;$('#btnFreeze').disabled=!t.freeze;
+  $('#btnDouble').textContent=`2× Score (${t.double})`;$('#btnDouble').disabled=!t.double;
+}
+$('#answerInput').addEventListener('keydown',e=>{if(e.key==='Enter')verifyAdventureAnswer();});
+$('#btnHint').onclick=()=>{const t=state.adventure.tools;if(!t.hint)return;t.hint--;showToast('Hint Used');renderTools();alert('Think about inverse operations…');};
+$('#btnFreeze').onclick=()=>{const t=state.adventure.tools;if(!t.freeze)return;t.freeze--;showToast('Time Frozen 5s');renderTools();state.adventure.timer+=5;};
+$('#btnDouble').onclick=()=>{const t=state.adventure.tools;if(!t.double)return;t.double--;state.adventure.double=true;showToast('2× Activated');renderTools();};
+function updateProgress(){
+  const per=Math.min(state.adventure.level/10,1)*100;
+  $('#prog-'+state.adventure.currentWorld).style.width=per+'%';
+}
+function shakePanel(){$('#questionPanel').style.animation='shake .4s';setTimeout(()=>$('#questionPanel').style.animation='none',400);}
+function capitalize(str){return str[0].toUpperCase()+str.slice(1);}
+
+/* ============ Math Duel ============ */
+$('#btnDuel').onclick=()=>{startDuel();};
+function startDuel(){state.duel={turn:'A',scoreA:0,scoreB:0,timer:90};nextDuelQ();switchView('#duelView');duelTimer();}
+function nextDuelQ(){const arr=['arithmetic','algebra','geometry','probability'];const g=generators[arr[rand(0,3)]]();state.duel.q=g;$('#duelQ').textContent=g.q;}
+function duelAnswer(player){
+  const input=prompt(`${player}: Answer?`);if(input===null)return;
+  const correct=String(input).toLowerCase()===String(state.duel.q.ans).toLowerCase();
+  if(correct){if(player==='A'){state.duel.scoreA+=10;}else{state.duel.scoreB+=10;}showToast('✔');}
+  else showToast('✖');
+  updateDuelUI();nextDuelQ();
+}
+function updateDuelUI(){
+  $('#playerA span').textContent=state.duel.scoreA;$('#playerB span').textContent=state.duel.scoreB;
+}
+function duelTimer(){
+  if(!$('#duelView').classList.contains('active'))return;
+  if(state.duel.timer<=0){endDuel();return;}
+  state.duel.timer--;setTimeout(duelTimer,1000);
+}
+function endDuel(){
+  const msg=`A: ${state.duel.scoreA} | B: ${state.duel.scoreB}<br>${state.duel.scoreA===state.duel.scoreB?'Draw':state.duel.scoreA>state.duel.scoreB?'Player A Wins!':'Player B Wins!'}`;
+  showDialog('Time Up',msg,()=>{switchView('#adventureView');});
+}
+/* 键盘控制 */
+document.addEventListener('keydown',e=>{
+  if(!$('#duelView').classList.contains('active'))return;
+  if(e.key==='w')duelAnswer('A');
+  if(e.key==='ArrowUp')duelAnswer('B');
+});
+
+/* ============ Leaderboard ============ */
+$('#btnBoard').onclick=()=>{renderBoard();switchView('#boardView');};
+function renderBoard(){
+  const body=$('#boardBody');body.innerHTML='';
+  if(state.board.length===0){body.insertAdjacentHTML('beforeend',`<tr><td colspan="3" class="emptyRow">No records</td></tr>`);return;}
+  state.board.forEach((r,i)=>{body.insertAdjacentHTML('beforeend',`<tr><td>${i+1}</td><td>${r.name}</td><td>${r.score}</td></tr>`);});
+}
+$('#boardBack').onclick=()=>switchView('#adventureView');
+
+/* ============ 顶部模式按钮 ============ */
+$('#btnAdventure').onclick=()=>switchView('#adventureView');
+$('#duelExit').onclick=()=>switchView('#adventureView');
+
+/* ============ 初始化 ============ */
+switchView('#adventureView');
+</script>
+</body>
+</html>

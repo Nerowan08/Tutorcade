@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AP Psychology Interactive Lab</title>
+
+<!-- ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
+     GLOBAL THEME / UI
+‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑ -->
+<style>
+/* ===== CSS RESET (mini) ===== */
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+button{cursor:pointer;border:none;background:none}
+
+/* ===== ROOT TOKENS (light/dark ready) ===== */
+:root{
+  --bg:#f6f8fa;
+  --surface:#ffffff;
+  --surface-2:#e9eef2;
+  --primary:#536dfe;
+  --primary-dark:#304ffe;
+  --accent:#ff4081;
+  --text:#1b1f23;
+  --text-light:#555;
+  --radius:12px;
+  --shadow:0 4px 12px rgba(0,0,0,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0d1117;
+    --surface:#161b22;
+    --surface-2:#21262d;
+    --primary:#8c9eff;
+    --primary-dark:#536dfe;
+    --accent:#ff77a9;
+    --text:#e6edf3;
+    --text-light:#9ba4b0;
+    --shadow:0 4px 12px rgba(0,0,0,.5);
+  }
+}
+
+/* ===== LAYOUT CONTAINERS ===== */
+body{background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column}
+header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;background:var(--surface);box-shadow:var(--shadow);z-index:5}
+header h1{font-size:clamp(1.2rem,2vw,1.6rem);font-weight:600;letter-spacing:.03em}
+header nav button{padding:.5rem 1rem;border-radius:var(--radius);background:var(--primary);color:#fff;font-weight:600;transition:.2s}
+header nav button:hover{background:var(--primary-dark);transform:translateY(-1px)}
+
+main{flex:1;display:grid;place-items:center;padding:1rem;overflow:hidden}
+#screen{width:100%;max-width:1000px;height:100%;background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto;position:relative;animation:fade 300ms ease}
+@keyframes fade{from{opacity:0;transform:scale(.98)}to{opacity:1;transform:scale(1)}}
+
+/* ===== GENERIC UI COMPONENTS ===== */
+.section{padding:2rem 3rem}
+h2{font-size:clamp(1.1rem,2.5vw,1.4rem);margin-bottom:1rem;letter-spacing:.02em}
+p{line-height:1.55;margin:.6rem 0;color:var(--text-light)}
+.flex{display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
+.card{background:var(--surface-2);padding:1.5rem;border-radius:var(--radius);flex:1 1 250px;min-width:240px;text-align:center;box-shadow:var(--shadow);transition:.2s}
+.card h3{margin-bottom:.5rem;font-size:1.1rem}
+.card:hover{transform:translateY(-4px);box-shadow:0 6px 14px rgba(0,0,0,.12)}
+
+.btn{padding:.7rem 1.4rem;border-radius:var(--radius);background:var(--primary);color:#fff;font-weight:600;letter-spacing:.02em;transition:.2s}
+.btn:hover{background:var(--primary-dark);transform:translateY(-1px)}
+.btn.accent{background:var(--accent)}
+.btn.outline{background:none;color:var(--primary);border:2px solid var(--primary)}
+.btn.outline:hover{background:var(--primary);color:#fff}
+
+.hidden{display:none !important}
+
+/* ===== RESPONSIVE TWEAKS ===== */
+@media (max-width:600px){
+  .section{padding:1.5rem}
+  header h1{display:none}
+  header nav button{padding:.5rem .8rem}
+}
+</style>
+</head>
+
+
+
+<!-- ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
+          BODY
+‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑ -->
+<body>
+
+<header>
+  <h1>AP Psychology Interactive Lab</h1>
+
+  <nav class="flex">
+    <!-- Language toggle (simple) -->
+    <button id="langToggle" class="btn outline" title="中文 / English">中文</button>
+    <!-- Exit back to launcher -->
+    <a href="launcher.html"><button class="btn accent">Exit to Launcher</button></a>
+  </nav>
+</header>
+
+<main>
+  <!-- Dynamic content will be injected here -->
+  <div id="screen"></div>
+</main>
+
+
+
+<!-- ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑
+             JS
+‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑ -->
+<script>
+/* =======================================================================
+   GLOBAL STATE & helpers
+==========================================================================*/
+const State={
+  lang:'en',           // 'en' | 'zh'
+  module:null,         // current module id
+  profile:{credits:0}, // can be expanded
+};
+const $=q=>document.querySelector(q);
+const $$=q=>[...document.querySelectorAll(q)];
+function _(k){return Strings[State.lang][k]||k}
+
+/* =======================================================================
+   STRINGS (i18n)  – extend as needed
+==========================================================================*/
+const Strings={
+  en:{
+    start:'Start Lab',
+    continue:'Continue',
+    back:'Back',
+    credits:'Credits',
+    main_intro:`Welcome to the *AP Psychology Interactive Lab*!  
+Choose an experiment, solve the challenge, and earn research credits.`,
+    module_cc:'Classical Conditioning Arena',
+    module_mm:'Memory Maze',
+    module_sd:'Social Dilemma Simulator',
+    module_dev:'Development Lab',
+    module_cc_desc:'Pair stimuli and observe salivation like Pavlov—can you optimize learning speed?',
+    module_mm_desc:'Traverse a 3‑level maze that tests your sensory, working, and long‑term memory.',
+    module_sd_desc:'Face peer pressure and conformity trials reminiscent of Asch & Milgram.',
+    module_dev_desc:'Order milestones and test theories from Piaget, Erikson, Kohlberg.',
+    earned:`You earned`,
+    credits_word:`credits!`,
+  },
+  zh:{
+    start:'开始实验',
+    continue:'继续',
+    back:'返回',
+    credits:'学分',
+    main_intro:`欢迎来到 **AP心理学交互实验室**！  
+请挑选实验，完成挑战，赚取学术学分。`,
+    module_cc:'经典条件作用竞技场',
+    module_mm:'记忆迷宫',
+    module_sd:'社会困境模拟器',
+    module_dev:'发展心理学实验室',
+    module_cc_desc:'像巴甫洛夫一样配对刺激并观察唾液分泌——能否最速学习？',
+    module_mm_desc:'三层迷宫考察感官记忆、工作记忆与长时记忆。',
+    module_sd_desc:'面对从众与权威压力，重现阿希与米尔格拉姆的经典研究。',
+    module_dev_desc:'排列里程碑，检验皮亚杰、埃里克森、科尔伯格理论。',
+    earned:`你获得了`,
+    credits_word:`学分！`,
+  }
+};
+
+/* =======================================================================
+   TEMPLATES
+==========================================================================*/
+const Screens={
+  /* ---------- HOME / HUB ---------- */
+  home:()=>`
+    <div class="section">
+      <h2>${_('main_intro')}</h2>
+      <br/>
+      <div class="flex">
+        ${Card('cc')}
+        ${Card('mm')}
+        ${Card('sd')}
+        ${Card('dev')}
+      </div>
+      <br/><br/>
+      <p><strong>${_('credits')}:</strong> <span id="creditCount">${State.profile.credits}</span></p>
+    </div>`,
+  /* ---------- CLASSICAL CONDITIONING ---------- */
+  cc:()=>`
+    <div class="section">
+      <button class="btn outline" onclick="goHome()">${_('back')}</button>
+      <h2>${_('module_cc')}</h2>
+      <p>Meet *Pavlov’s Robo‑Dog*.  
+      Your goal: pair the bell (neutral stimulus) with food (unconditioned stimulus) until the bell alone elicits salivation.</p>
+
+      <div class="flex" style="margin-top:1.5rem">
+        <button class="btn" onclick="ccPair()">&nbsp;🔔 Ring Bell + 🍖&nbsp;</button>
+        <button class="btn outline" onclick="ccTest()">&nbsp;🔔 Ring Bell Only&nbsp;</button>
+      </div>
+      <br/>
+      <p id="ccStatus"></p>
+    </div>`,
+  /* ---------- MEMORY MAZE ---------- */
+  mm:()=>`
+    <div class="section">
+      <button class="btn outline" onclick="goHome()">${_('back')}</button>
+      <h2>${_('module_mm')}</h2>
+      <p>You’ll see a pattern of icons. Reproduce it from memory.  
+      Each level adds one more item.</p>
+      <br/><br/>
+      <div id="mmPanel" class="flex"></div>
+      <br/>
+      <div id="mmInput" class="flex"></div>
+      <p id="mmMsg"></p>
+    </div>`,
+  /* ---------- SOCIAL DILEMMA ---------- */
+  sd:()=>`
+    <div class="section">
+      <button class="btn outline" onclick="goHome()">${_('back')}</button>
+      <h2>${_('module_sd')}</h2>
+      <p>A group unanimously picks the wrong answer to a simple line‑length task.  
+      Do you conform (<em>${_('continue')}</em> with group) or stay independent (<em>${_('back')}</em>)?</p>
+      <br/>
+      <div class="flex">
+        <button class="btn" onclick="sdDecision(true)">🙋‍♂️ Conform</button>
+        <button class="btn outline" onclick="sdDecision(false)">🙅‍♀️ Stay Independent</button>
+      </div>
+      <p id="sdMsg" style="margin-top:1rem"></p>
+    </div>`,
+  /* ---------- DEVELOPMENT LAB ---------- */
+  dev:()=>`
+    <div class="section">
+      <button class="btn outline" onclick="goHome()">${_('back')}</button>
+      <h2>${_('module_dev')}</h2>
+      <p>Drag & drop Piaget’s stages into correct chronological order.</p>
+      <br/>
+      <ul id="devList" style="list-style:none;padding:0"></ul>
+      <p id="devMsg"></p>
+    </div>`
+};
+/* Helpers to produce module cards */
+function Card(id){
+  return `<div class="card" onclick="openModule('${id}')">
+      <h3>${_('module_'+id)}</h3>
+      <p>${_('module_'+id+'_desc')}</p>
+    </div>`;
+}
+
+/* =======================================================================
+   NAVIGATION
+==========================================================================*/
+function render(html){$('#screen').innerHTML=html}
+function goHome(){State.module=null;render(Screens.home());updateCredits()}
+function openModule(id){State.module=id;render(Screens[id]());initModule(id)}
+window.addEventListener('load',goHome);
+
+/* =======================================================================
+   MODULE LOGIC
+==========================================================================*/
+
+/* === Classical Conditioning === */
+let ccTrials=0,ccLearned=false;
+function initCC(){ccTrials=0;ccLearned=false;$('#ccStatus').textContent=''}
+function ccPair(){
+  if(ccLearned){msg(_('earned')+' 5 '+_('credits_word'));return}
+  ccTrials++;
+  $('#ccStatus').textContent=`Pairing #${ccTrials}… Salivation!`
+  if(ccTrials>=3){ccLearned=true;award(5);$('#ccStatus').textContent='Conditioned! The bell alone now triggers salivation.'}
+}
+function ccTest(){
+  if(ccLearned){$('#ccStatus').textContent='🔔 Bell rings… Salivation confirmed!'}
+  else{$('#ccStatus').textContent='🔔 Bell rings… No salivation yet.'}
+}
+
+/* === Memory Maze === */
+let mmSeq=[],mmUser=[];
+function initMM(){mmSeq=[];mmUser=[];$('#mmMsg').textContent='';nextMM()}
+function icons(){return ['🍎','🚀','🎸','🐶','🌈','⚽️','🎲','📚','🎧','🧩']}
+function nextMM(){
+  mmSeq.push(rnd(icons()));
+  showSequence();
+}
+function rnd(arr){return arr[Math.floor(Math.random()*arr.length)]}
+function showSequence(){
+  $('#mmPanel').innerHTML=mmSeq.map(i=>`<span style="font-size:2rem">${i}</span>`).join(' ');
+  $('#mmInput').innerHTML='';
+  mmUser=[];
+  setTimeout(()=>{$('#mmPanel').innerHTML='';drawChoices()},1000*mmSeq.length+800);
+}
+function drawChoices(){
+  $('#mmInput').innerHTML=icons().map(ic=>
+    `<button class="btn outline" onclick="pickMM('${ic}')">${ic}</button>`).join('');
+}
+function pickMM(ic){
+  mmUser.push(ic);
+  if(mmUser.length===mmSeq.length){
+    $('#mmInput').innerHTML='';
+    validateMM();
+  }
+}
+function validateMM(){
+  if(JSON.stringify(mmUser)===JSON.stringify(mmSeq)){
+    award(3*mmSeq.length);
+    $('#mmMsg').textContent=`Correct (${mmSeq.length})! Next level…`;
+    nextMM();
+  }else{
+    $('#mmMsg').textContent='Oops—wrong sequence. Restarting level.';
+    mmUser=[];drawChoices();
+  }
+}
+
+/* === Social Dilemma === */
+function initSD(){$('#sdMsg').textContent=''}
+function sdDecision(conf){
+  const msg=conf
+    ?'You conformed. Group harmony maintained; accuracy lost.'
+    :'You resisted! Independent thought preserved.';
+  $('#sdMsg').textContent=msg;
+  award(conf?2:4);
+}
+
+/* === Development Lab === */
+function initDEV(){
+  $('#devMsg').textContent='';
+  const stages=['Sensorimotor','Pre‑operational','Concrete Operational','Formal Operational'];
+  const shuffled=stages.sort(()=>Math.random()-.5);
+  $('#devList').innerHTML=shuffled.map(st=>`<li draggable="true" ondragstart="drag(event)"
+        style="padding:.6rem 1rem;margin:.4rem 0;background:var(--surface-2);border-radius:var(--radius);box-shadow:var(--shadow);">${st}</li>`).join('');
+  $('#devList').ondragover=e=>e.preventDefault();
+  $('#devList').ondrop=drop;
+}
+let dragEl=null;
+function drag(e){dragEl=e.target}
+function drop(e){
+  if(e.target.tagName!=='LI')return;
+  const list=$('#devList');
+  list.insertBefore(dragEl,e.target.nextSibling);
+  checkDEV();
+}
+function checkDEV(){
+  const order=[...$('#devList').children].map(li=>li.textContent.trim());
+  if(order.join()===['Sensorimotor','Pre‑operational','Concrete Operational','Formal Operational'].join()){
+    $('#devMsg').textContent='Perfect! Stage order correct.';
+    award(6);
+  }else{$('#devMsg').textContent='Keep arranging…'}
+}
+
+/* Dispatch module‑specific initialisers */
+function initModule(id){
+  ({cc:initCC,mm:initMM,sd:initSD,dev:initDEV})[id]();
+}
+
+/* =======================================================================
+   CREDITS & UTIL
+==========================================================================*/
+function award(n){State.profile.credits+=n;updateCredits();msg(`${_('earned')} ${n} ${_('credits_word')}`)}
+function updateCredits(){$('#creditCount')&&($('#creditCount').textContent=State.profile.credits)}
+function msg(t){alert(t)}
+
+/* =======================================================================
+   LANGUAGE TOGGLE
+==========================================================================*/
+$('#langToggle').onclick=()=>{
+  State.lang=State.lang==='en'?'zh':'en';
+  $('#langToggle').textContent=State.lang==='en'?'中文':'EN';
+  if(State.module){render(Screens[State.module]());initModule(State.module)}
+  else{goHome();}
+};
+
+/* =======================================================================
+   STORAGE (save on unload) – simple localStorage example
+==========================================================================*/
+window.addEventListener('beforeunload',()=>localStorage.setItem('psychProfile',JSON.stringify(State.profile)));
+window.addEventListener('load',()=>{
+  const saved=localStorage.getItem('psychProfile');
+  if(saved)State.profile=JSON.parse(saved);
+});
+</script>
+
+</body>
+</html>

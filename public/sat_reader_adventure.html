@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SAT Reading League — Grand Edition</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+/* ================= 0. 全局主题 ================= */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:system-ui,-apple-system,Segoe UI,Tahoma,sans-serif;background:#14171f;color:#eceef4;overflow:hidden}
+:root{
+  --accent:#5d8bff;--accent-light:#8ca6ff;
+  --danger:#ff595e;--success:#3ddc91;
+  --tile:#1e222d;--tile-border:#31384b;--bg-soft:#1a1d26;
+}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--accent-light);border-radius:3px}
+
+/* ================= 1. 顶栏 ================= */
+#bar{position:fixed;top:0;left:0;width:100%;height:52px;padding:0 1rem;background:#10131a;
+     display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--tile-border);z-index:90}
+#bar button{border:none;background:var(--accent);color:#fff;padding:.45rem 1.1rem;border-radius:8px;font-weight:600;cursor:pointer}
+#bar button:hover{background:#5079e6}
+
+/* ================= 2. 主区域 ================= */
+#root{position:absolute;inset:52px 0 0 0;display:grid;grid-template-columns:1fr 420px}
+@media(max-width:1024px){#root{grid-template-columns:1fr}}
+
+/* ---- 2.1 地图 ---- */
+#map-wrap{position:relative;background:var(--bg-soft);overflow:hidden}
+#map{
+  position:absolute;width:2400px;height:1800px;
+  background:url('data:image/svg+xml;utf8,\
+<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="%231e222d"/><path d="M0 0h10v1H0zM0 0h1v10H0z" fill="%2331384b"/></svg>') repeat;
+  transition:transform .25s;
+}
+.poi{position:absolute;background:var(--tile);border:2px solid var(--tile-border);border-radius:10px;
+     display:flex;align-items:center;justify-content:center;text-align:center;padding:.4rem;font-size:.8rem;font-weight:600;cursor:pointer;user-select:none}
+.poi.locked{opacity:.3;filter:grayscale(1);cursor:not-allowed}
+.poi:hover:not(.locked){border-color:var(--accent)}
+#avatar{width:36px;height:46px;background:var(--accent);border-radius:6px;position:absolute;transition:top .25s,left .25s}
+
+/* ---- 2.2 侧栏 ---- */
+#panel{background:#181c26;border-left:1px solid var(--tile-border);display:flex;flex-direction:column}
+#tabs{display:flex}
+.tab{flex:1;text-align:center;padding:.75rem 0;font-weight:600;cursor:pointer}
+.tab.active{background:#202632}
+#body{flex:1;overflow:auto;padding:1rem;line-height:1.6}
+.section{margin-bottom:1.6rem}h3{margin-bottom:.6rem}
+
+/* ================= 3. 通用组件 ================= */
+.sentence{cursor:pointer;padding:.1rem .2rem;border-radius:4px}
+.sentence:hover{background:#2a3040}.sentence.sel{background:var(--success);color:#fff}
+.token{cursor:pointer;color:var(--accent);font-weight:600}.token.hit{color:var(--success)}
+.scramble-target{min-height:64px;border:2px dashed var(--tile-border);border-radius:6px;padding:.4rem;display:flex;flex-wrap:wrap}
+.letter{display:inline-block;margin:.16rem;padding:.48rem .6rem;border:2px solid var(--tile-border);border-radius:6px;background:var(--tile);user-select:none;font-weight:600;cursor:grab}
+.letter.drag{opacity:.6}
+.order-item{padding:.5rem;border:2px solid var(--tile-border);background:var(--tile);border-radius:6px;margin-bottom:.48rem;cursor:grab}
+.order-item.drag{opacity:.6}
+.badge{display:inline-block;background:var(--accent);padding:.24rem .6rem;border-radius:4px;font-size:.72rem;margin:0 .3rem .3rem 0}
+.gap{display:inline-block;min-width:80px;border-bottom:2px solid var(--tile-border);padding:.05rem .2rem;margin:0 .12rem}
+.gap:focus{outline:none;border-color:var(--accent);background:#2a3040}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:.6rem}
+.card{background:var(--tile);border:2px solid var(--tile-border);height:90px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+      cursor:pointer;font-weight:600;font-size:.85rem;user-select:none;position:relative;transition:transform .2s}
+.card.flip{background:var(--accent);color:#fff;transform:rotateY(180deg)}
+.card.matched{background:var(--success);border-color:var(--success);color:#fff}
+
+/* ================= 4. 排行榜 ================= */
+#rank tbody tr.me{background:#242c3d}
+#rank td,#rank th{padding:.35rem .6rem;text-align:left;font-size:.9rem}
+#rank th{border-bottom:2px solid var(--tile-border)}
+
+/* ================= 5. 弹窗 ================= */
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:.25s}
+#modal.on{opacity:1;visibility:visible}
+#modal .box{background:#fff;color:#111;padding:2rem;border-radius:14px;max-width:540px;text-align:center}
+#modal button{margin-top:1.4rem;border:none;background:var(--accent);color:#fff;padding:.65rem 1.5rem;border-radius:8px;font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+
+<!-- ---------- 顶栏 ---------- -->
+<div id="bar">
+  <div style="font-weight:700">SAT Reading League — Grand Edition</div>
+  <div>
+    <button onclick="showRank()">Leaderboard</button>
+    <button style="margin-left:.6rem" onclick="openBag()">Backpack</button>
+    <button style="margin-left:.6rem" onclick="quit()">Exit Game</button>
+  </div>
+</div>
+
+<!-- ---------- 主区域 ---------- -->
+<div id="root">
+  <!-- 地图 -->
+  <div id="map-wrap">
+    <div id="map">
+      <div id="avatar"></div>
+      <!-- 10 建筑 -->
+      <div class="poi" style="top:260px;left:340px;width:170px;height:120px" data-lv="0">Library</div>
+      <div class="poi locked" style="top:700px;left:1030px;width:190px;height:140px" data-lv="1">Biolab</div>
+      <div class="poi locked" style="top:1180px;left:580px;width:150px;height:110px" data-lv="2">Observatory</div>
+      <div class="poi locked" style="top:350px;left:1650px;width:170px;height:120px" data-lv="3">Harbour</div>
+      <div class="poi locked" style="top:980px;left:1650px;width:160px;height:120px" data-lv="4">Debate Hall</div>
+      <div class="poi locked" style="top:1450px;left:280px;width:180px;height:120px" data-lv="5">Cafe Chat</div>
+      <div class="poi locked" style="top:200px;left:1150px;width:180px;height:120px" data-lv="6">Press Room</div>
+      <div class="poi locked" style="top:1550px;left:1250px;width:180px;height:120px" data-lv="7">Archives</div>
+      <div class="poi locked" style="top:500px;left:2200px;width:170px;height:120px" data-lv="8">Theater</div>
+      <div class="poi locked" style="top:1350px;left:2100px;width:170px;height:120px" data-lv="9">Arena</div>
+    </div>
+  </div>
+
+  <!-- 侧栏 -->
+  <div id="panel">
+    <div id="tabs">
+      <div class="tab active" data-tab="quest">Quest</div>
+      <div class="tab" data-tab="log">Log</div>
+    </div>
+    <div id="body"><p>Use ⬅️⬆️⬇️➡️ to move. Enter a building to compete.</p></div>
+  </div>
+</div>
+
+<!-- ---------- 弹窗 ---------- -->
+<div id="modal">
+  <div class="box">
+    <h2 id="m-title"></h2>
+    <p id="m-msg"></p>
+    <button id="m-btn"></button>
+  </div>
+</div>
+
+<script>
+/* =======================================================
+   1. 关卡内容（10 个，10 种任务）
+   =======================================================*/
+const LEVELS=[
+  {title:"Library – Steam Sparks",cut:"Rival *Avery*: “Beat my record 60 s.”",
+   entry:"Dust swirls as blueprints glow under lamplight.",
+   passage:[
+     "In the latter half of the eighteenth century, a concatenation of technological innovations transformed the placid agrarian towns of Britain into humming engines of production.",
+     "Steam, coal and steel collaborated in unforeseen ways, unshackling humanity from the slow rhythms of muscle‑powered labor.",
+     "For millennia, the seasons dictated the cadence of manufacture; now pistons did."
+   ],
+   task:{type:"evidence",prompt:"Click the sentence that BEST shows the seasonal→mechanical shift.",answer:2},
+   vocab:{word:"SERENE",clue:"Opposite of turbulent."}
+  },
+  {title:"Biolab – Genome Gamble",cut:"*Nova*: “85 pts is your target.”",
+   entry:"Neon CRISPR arrays pulse.",
+   passage:[
+     "\"We hold within our grasp the ability to revise life's blueprint,\" announced Dr Patel.",
+     "Yet even as the promise of eradicating hereditary disease glittered before the audience, a murmur of unease threaded through the applause.",
+     "Ethical specters hovered, reminding listeners that power seldom arrives unaccompanied."
+   ],
+   task:{type:"scramble",prompt:"Rebuild the verb meaning “change the structure of”.",answer:"MODIFY"},
+   vocab:{word:"AMBIVALENCE",clue:"Mixed feelings."},locked:true
+  },
+  {title:"Observatory – Starlight Cipher",cut:"*Lumen*: “Collect the scrolls in 70 s.”",
+   entry:"Meteor trails etch the dome.",
+   passage:[
+     "My dearest Clara, last night the {firmament} unveiled a meteor shower of such brilliance that it called to mind the lanterned festivals of our youth.",
+     "Though distance separates us, I felt your {presence} in every streak of light.",
+     "{Wonder}, it seems, travels the void more swiftly than sound."
+   ],
+   task:{type:"collect",prompt:"Click all glowing words to decode awe."},
+   vocab:{word:"FIRMAMENT",clue:"Poetic sky."},locked:true
+  },
+  {title:"Harbour – Cargo Symphony",cut:"*Rex*: “Sort summary in 50 s.”",
+   entry:"Cranes creak over restless waves.",
+   passage:[
+     "By the mid‑nineteenth century, New York's waterfront had become a sprawling mosaic of merchant ambitions.",
+     "Immigrants stepped onto the docks with calloused hope, swelling the city's restless energy.",
+     "Railways snaked inland, braiding port and prairie into a single commercial artery."
+   ],
+   task:{type:"order",prompt:"Arrange the summaries chronologically.",items:[
+     "Immigrant waves inject human capital into the city.",
+     "Rail infrastructure links the port with the interior.",
+     "The harbour evolves into a merchant powerhouse."
+   ],answer:[0,1,2]},
+   vocab:{word:"ARTERY",clue:"Main route."},locked:true
+  },
+  {title:"Debate Hall – Word Duel",cut:"*Iris*: “Perfect match ≤ 40 s.”",
+   entry:"Orators cross metaphors like swords.",
+   passage:["“Liberty,” intoned Harcourt, “is a flame best fed by informed minds, else it sputters into chaos.”"],
+   task:{type:"match",prompt:"Match term ↔ definition.",pairs:[
+     ["CANDOR","unreserved honesty"],
+     ["TACT","sensitive diplomatic skill"],
+     ["CREDULITY","ready willingness to believe"],
+     ["PLACATE","to calm or appease"]
+   ]},
+   vocab:{word:"CANDOR",clue:"Frank honesty."},locked:true
+  },
+  {title:"Cafe Chat – Logic Lines",cut:"Mentor *Quill*: “≥90 pts to qualify.”",
+   entry:"Steam rises with whispered theories.",
+   passage:["Across from you sits Mira, her notebook crowded with marginalia."],
+   task:{type:"dialog",prompt:"Guide Mira to solid strategy.",steps:[
+     {npc:"SAT passages overwhelm me. First step?",opt:[["Find the author's claim.","right"],["Check publication date.","wrong"]]},
+     {npc:"After that?",opt:[["Jump to questions.","wrong"],["Trace paragraph roles.","right"]]},
+     {npc:"And vocab?",opt:[["Guess by vibe.","wrong"],["Use context clues.","right"]]}
+   ]},
+   vocab:{word:"MARGINALIA",clue:"Notes at margins."},locked:true
+  },
+  {title:"Press Room – Gap Gazette",cut:"*Byte*: “Fill blanks ≤ 60 s.”",
+   entry:"Rotary presses rumble.",
+   passage:[
+     "A good headline is a promise — it must be {_____} yet irresistible, offering readers a compass through the noise.",
+     "Editors who master this craft wield {_____} influence over public discourse."
+   ],
+   task:{type:"gap",prompt:"Type the TWO missing academic adjectives.",answers:["concise","outsized"]},
+   vocab:{word:"CONCISE",clue:"Brief & clear."},locked:true
+  },
+  {title:"Archives – Memory Vault",cut:"Archivist *Echo*: “Card pairs in 65 s.”",
+   entry:"Dusty drawers slide open revealing forgotten index cards.",
+   passage:["Collect terms by memory."],
+   task:{type:"memory",prompt:"Flip cards to match term & definition.",pairs:[
+     ["ANALOGY","comparison for clarification"],
+     ["NUANCE","subtle distinction"],
+     ["ASSERT","state confidently"],
+     ["IMPARTIAL","unbiased"]
+   ]},
+   vocab:{word:"NUANCE",clue:"Subtle distinction."},locked:true
+  },
+  {title:"Theater – Rhetoric Spotlight",cut:"*Lys*: “Highlight 5 devices in 45 s.”",
+   entry:"Velvet curtains rise on persuasive monologue.",
+   passage:[
+     "We have journeyed from {hyperbole} to {metaphor}, from {parallelism} to {alliteration}, yet the {antithesis} between fear and hope remains."
+   ],
+   task:{type:"highlight",prompt:"Click ALL rhetorical devices (5).",count:5},
+   vocab:{word:"ANTITHESIS",clue:"Direct contrast."},locked:true
+  },
+  {title:"Arena – Final Boss",cut:"League Leader *Astra*: “Score ≥ 800 to win it all.”",
+   entry:"Floodlights blaze over marble arena.",
+   passage:[
+     "Voices echo as your rivals assemble — each challenge returns in swift succession."
+   ],
+   task:{type:"boss"},
+   vocab:{word:"APEX",clue:"The top."},locked:true
+  }
+];
+
+/* =======================================================
+   2. 全局状态 & 存档
+   =======================================================*/
+const ls=k=>JSON.parse(localStorage.getItem(k)||'null'),put=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+let state={
+  name:ls("srName")||null,
+  x:80,y:80,unlocked:LEVELS.map((_,i)=>i===0),
+  done:new Set(ls("srDone")||[]),
+  vocab:new Set(ls("srVocab")||[]),
+  score:ls("srScore")||0
+};
+function save(){put("srDone",[...state.done]);put("srVocab",[...state.vocab]);put("srScore",state.score);}
+
+/* 排行榜 */
+let board=ls("srBoard")||[];
+function addBoard(e){board.push(e);board.sort((a,b)=>b.pts-a.pts).splice(20);put("srBoard",board);}
+
+/* =======================================================
+   3. DOM refs
+   =======================================================*/
+const map=document.getElementById("map"),avatar=document.getElementById("avatar");
+const body=document.getElementById("body"),tabs=document.querySelectorAll(".tab");
+const modal=document.getElementById("modal"),mt=document.getElementById("m-title"),mm=document.getElementById("m-msg"),mb=document.getElementById("m-btn");
+
+/* =======================================================
+   4. 摄像机 & 移动
+   =======================================================*/
+const STEP=36,W=2400,H=1800;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function camera(){
+  avatar.style.left=state.x+"px";avatar.style.top=state.y+"px";
+  const dx=clamp(-state.x+innerWidth/2,-(W-innerWidth),0);
+  const dy=clamp(-state.y+(innerHeight-52)/2,-(H-(innerHeight-52)),0);
+  map.style.transform=`translate(${dx}px,${dy}px)`;
+}
+camera();
+window.addEventListener("keydown",e=>{
+  let mv=false;
+  switch(e.key){case"ArrowLeft":state.x=clamp(state.x-STEP,0,W-36);mv=true;break;
+    case"ArrowRight":state.x=clamp(state.x+STEP,0,W-36);mv=true;break;
+    case"ArrowUp":state.y=clamp(state.y-STEP,0,H-46);mv=true;break;
+    case"ArrowDown":state.y=clamp(state.y+STEP,0,H-46);mv=true;break;}
+  if(mv){camera();checkPOI();}
+});
+function rect(el){const r=el.getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height}}
+function checkPOI(){
+  document.querySelectorAll(".poi").forEach(p=>{
+    const a=rect(avatar),b=rect(p);
+    if(!(a.right<b.x||a.x>b.right||a.bottom<b.y||a.y>b.bottom) && !p.classList.contains("locked"))enter(+p.dataset.lv);
+  });
+}
+function unlockUI(){document.querySelectorAll(".poi").forEach(p=>{
+  const i=+p.dataset.lv;p.classList.toggle("locked",!state.unlocked[i]);
+});}
+
+/* =======================================================
+   5. Tabs
+   =======================================================*/
+tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove("active"));t.classList.add("active");
+  t.dataset.tab==="log"?renderLog():renderHome();});
+function renderHome(){body.innerHTML="<p>Use ⬅️⬆️⬇️➡️ to move. Enter buildings to compete.</p>";}
+function renderLog(){
+  body.innerHTML=`<h3>Words</h3>${[...state.vocab].map(w=>`<span class="badge">${w}</span>`).join("")||"None yet."}
+  <h3 style="margin-top:1rem">League Score : ${state.score}</h3>`;
+}
+function openBag(){tabs.forEach(t=>t.classList.toggle("active",t.dataset.tab==="log"));renderLog();}
+
+/* =======================================================
+   6. 进入关卡
+   =======================================================*/
+let idx=null,clock=0;function now(){return performance.now();}
+function enter(i){
+  idx=i;const L=LEVELS[i];
+  body.innerHTML=`<div class="section"><h3>${L.title}</h3><p><em>${L.cut}</em></p><p style="margin-top:.8rem">${L.entry}</p></div><div class="section" id="pass"></div><div class="section" id="task"></div>`;
+  renderPassage(i);setup(i);tabs.forEach(t=>t.classList.toggle("active",t.dataset.tab==="quest"));clock=now();
+}
+function renderPassage(i){
+  const c=document.getElementById("pass");c.innerHTML="";
+  LEVELS[i].passage.forEach((s,n)=>{
+    if(LEVELS[i].task.type==="collect")s=s.replace(/\{(.*?)\}/g,(_,w)=>`<span class="token" data-word="${w}">${w}</span>`);
+    if(LEVELS[i].task.type==="highlight")s=s.replace(/\{(.*?)\}/g,(_,w)=>`<span class="token" data-tag="device">${w}</span>`);
+    if(LEVELS[i].task.type==="gap")s=s.replace(/\{_____}/g,"<span class='gap' contenteditable></span>");
+    const span=document.createElement("span");span.className="sentence";span.dataset.n=n;span.innerHTML=s+" ";c.appendChild(span);
+  });
+}
+
+/* =======================================================
+   7. 任务
+   =======================================================*/
+function setup(i){
+  const L=LEVELS[i],box=document.getElementById("task");box.innerHTML=`<h3>Task</h3><p>${L.task.prompt||""}</p>`;
+  const t=L.task.type;
+  if(t==="evidence")document.querySelectorAll(".sentence").forEach(s=>s.onclick=()=>{selSentence(s,i)});
+  else if(t==="scramble")scramble(i);
+  else if(t==="collect")collect(i);
+  else if(t==="order")order(i);
+  else if(t==="match")match(i);
+  else if(t==="dialog")dialog(i);
+  else if(t==="gap")gap(i);
+  else if(t==="memory")memory(i);
+  else if(t==="highlight")highlight(i);
+  else if(t==="boss")boss(i);
+}
+function selSentence(s,i){document.querySelectorAll(".sentence").forEach(x=>x.classList.remove("sel"));
+  s.classList.add("sel");Number(s.dataset.n)===LEVELS[i].task.answer?finish(i):flash("Wrong!",false);}
+function scramble(i){
+  const a=LEVELS[i].task.answer,tgt=document.createElement("div");tgt.className="scramble-target";
+  a.split("").forEach(ch=>{
+    const l=document.createElement("span");l.textContent=ch;l.className="letter";l.draggable=true;
+    l.ondragstart=()=>l.classList.add("drag");l.ondragend=()=>{l.classList.remove("drag");check();};tgt.appendChild(l);});
+  for(let k=tgt.children.length;k--;)tgt.appendChild(tgt.children[Math.random()*k|0]);
+  tgt.ondragover=e=>e.preventDefault();tgt.ondrop=e=>{
+    const d=document.querySelector(".drag"),t=e.target.closest(".letter");if(d&&t&&d!==t)tgt.insertBefore(d,t);
+  };
+  document.getElementById("task").appendChild(tgt);
+  function check(){[...tgt.children].map(x=>x.textContent).join("")===a&&finish(i);}
+}
+function collect(i){
+  const toks=document.querySelectorAll(".token");toks.forEach(t=>t.onclick=()=>{t.classList.add("hit");if([...toks].every(x=>x.classList.contains("hit")))finish(i);});
+}
+function order(i){
+  const d=LEVELS[i].task,wrap=document.createElement("div");
+  d.items.forEach((txt,n)=>{const li=document.createElement("div");li.className="order-item";li.dataset.n=n;li.textContent=txt;
+    li.draggable=true;li.ondragstart=()=>li.classList.add("drag");
+    li.ondragend=()=>{li.classList.remove("drag");chk();};wrap.appendChild(li);});
+  for(let k=wrap.children.length;k--;)wrap.appendChild(wrap.children[Math.random()*k|0]);
+  wrap.ondragover=e=>e.preventDefault();wrap.ondrop=e=>{
+    const d=document.querySelector(".drag"),t=e.target.closest(".order-item");if(d&&t&&d!==t)wrap.insertBefore(d,t);};
+  document.getElementById("task").appendChild(wrap);
+  const chk=()=>[...wrap.children].every((li,idx)=>Number(li.dataset.n)===d.answer[idx])&&finish(i);
+}
+function match(i){
+  const {pairs}=LEVELS[i].task,L=pairs.map(p=>p[0]),R=pairs.map(p=>p[1]);shuffle(L);shuffle(R);
+  const box=document.createElement("div");box.style.display="flex";box.style.gap="1rem";
+  const col=arr=>{const d=document.createElement("div");arr.forEach(t=>{const b=document.createElement("button");b.className="order-item";b.textContent=t;d.appendChild(b);});return d};
+  box.append(col(L),col(R));document.getElementById("task").appendChild(box);
+  let l=null,r=null,m=0;
+  [...box.querySelectorAll("button")].forEach(b=>b.onclick=()=>{
+    if(b.classList.contains("done"))return;
+    (L.includes(b.textContent)?(l&&l.classList.remove("sel"),l=b):(r&&r.classList.remove("sel"),r=b)).classList.add("sel");
+    if(l&&r){if(pairs.find(p=>p[0]===l.textContent&&p[1]===r.textContent)){[l,r].forEach(x=>{x.classList.add("done");x.onclick=null});m++;flash("✓",true);if(m===pairs.length)finish(i);}
+      else flash("×",false);[l,r].forEach(x=>x.classList.remove("sel"));l=r=null;}
+  });
+}
+function dialog(i){
+  const st=LEVELS[i].task.steps,box=document.getElementById("task");let p=0;render();
+  function render(){const s=st[p];box.innerHTML=`<h3>Task</h3><p>${LEVELS[i].task.prompt}</p><p><em>${s.npc}</em></p>`;
+    s.opt.forEach(([t,tag])=>{const b=document.createElement("button");b.textContent=t;b.style.margin=".5rem .3rem";b.onclick=()=>tag==="right"?ok():flash("Nope!",false);box.appendChild(b);});}
+  function ok(){++p===st.length?finish(i):render();}
+}
+function gap(i){
+  const ans=LEVELS[i].task.answers;const gaps=[...document.querySelectorAll(".gap")];
+  gaps.forEach((g,idx)=>g.oninput=()=>{if(g.textContent.trim().toLowerCase()===ans[idx])g.style.background="var(--success)";check();});
+  function check(){if(gaps.every((g,idx)=>g.textContent.trim().toLowerCase()===ans[idx]))finish(i);}
+}
+function memory(i){
+  const {pairs}=LEVELS[i].task;const cards=[];pairs.forEach(([t,d])=>{cards.push({txt:t,id:t}),cards.push({txt:d,id:t})});
+  shuffle(cards);
+  const grid=document.createElement("div");grid.className="card-grid";document.getElementById("task").appendChild(grid);
+  cards.forEach((c,idx)=>{const card=document.createElement("div");card.className="card";card.dataset.id=c.id;card.dataset.idx=idx;card.textContent="？";grid.appendChild(card);});
+  let first=null,match=0;
+  grid.onclick=e=>{
+    const card=e.target.closest(".card");if(!card||card.classList.contains("flip")||card.classList.contains("matched"))return;
+    flip(card,cards[card.dataset.idx].txt);
+    if(!first)first=card;else{
+      if(first.dataset.id===card.dataset.id){first.classList.add("matched");card.classList.add("matched");match++;if(match===pairs.length)finish(i);}
+      else setTimeout(()=>{unflip(first);unflip(card);},700);
+      first=null;
+    }
+  };
+  function flip(c,txt){c.classList.add("flip");c.textContent=txt;}
+  function unflip(c){c.classList.remove("flip");c.textContent="？";}
+}
+function highlight(i){
+  const need=LEVELS[i].task.count;let got=0;
+  document.querySelectorAll(".token").forEach(t=>t.onclick=()=>{if(!t.classList.contains("hit")){t.classList.add("hit");got++;if(got===need)finish(i);}});
+}
+function boss(i){
+  // 简化：随机 evidence 或 scramble
+  const mode=Math.random()<.5?"evidence":"scramble";
+  LEVELS[i].task.inner=mode;LEVELS[i].task.prompt="Mini‑challenge: "+(mode==="evidence"?"Pick thesis sentence.":"Rebuild 'ANALYZE'.");
+  const box=document.getElementById("task");box.querySelector("p").textContent=LEVELS[i].task.prompt;
+  if(mode==="evidence"){
+    document.querySelectorAll(".sentence").forEach((s,n)=>{if(n===0)s.textContent="A thesis unites all paragraphs.";});
+    LEVELS[i].task.answer=0;document.querySelectorAll(".sentence").forEach(s=>s.onclick=()=>selSentence(s,i));
+  }else{
+    LEVELS[i].task.answer="ANALYZE";scramble(i);
+  }
+}
+
+/* =======================================================
+   8. 结算
+   =======================================================*/
+function finish(i){
+  if(state.done.has(i))return;
+  const t=((now()-clock)/1000).toFixed(1);const base=100;const bonus=Math.max(0,100-Math.round(t));
+  const pts=base+bonus;
+  state.score+=pts;state.done.add(i);state.vocab.add(LEVELS[i].vocab.word);
+  const nxt=i+1;if(LEVELS[nxt])state.unlocked[nxt]=true;
+  save();unlockUI();
+  addBoard({name:state.name||"Anon",lv:i,pts,time:t,date:new Date().toLocaleDateString()});
+  showModal("Complete!",
+    `Time ${t}s • Points ${pts}<br>New word: <strong>${LEVELS[i].vocab.word}</strong><br>Total Score: ${state.score}`,
+    "Continue",()=>{modal.classList.remove("on");renderLog();});
+}
+
+/* =======================================================
+   9. 排行榜
+   =======================================================*/
+function showRank(){
+  tabs.forEach(t=>t.classList.remove("active"));
+  if(board.length<5)["Avery","Nova","Lumen","Rex","Iris"].forEach((n,j)=>board.push({name:n,lv:j,pts:90-5*j,time:55+5*j,date:"—"}));
+  board.sort((a,b)=>b.pts-a.pts).splice(20);put("srBoard",board);
+  body.innerHTML=`<h3>Leaderboard (Top 20)</h3>
+  <table id="rank"><thead><tr><th>#</th><th>Name</th><th>Pts</th><th>Time(s)</th><th>Lvl</th><th>Date</th></tr></thead><tbody>${
+    board.map((e,i)=>`<tr class="${e.name===state.name?'me':''}"><td>${i+1}</td><td>${e.name}</td><td>${e.pts}</td><td>${e.time}</td><td>${e.lv+1}</td><td>${e.date}</td></tr>`).join("")
+  }</tbody></table>`;
+}
+
+/* =======================================================
+   10. 工具函数
+   =======================================================*/
+function shuffle(a){for(let i=a.length;i--;)a.push(a.splice(Math.random()*i|0,1)[0]);}
+function flash(txt,ok){const d=document.createElement("div");d.textContent=txt;d.style.cssText=
+  `position:fixed;top:70px;left:50%;transform:translateX(-50%);background:${ok?'var(--success)':'var(--danger)'};color:#fff;
+   padding:.5rem 1rem;border-radius:8px;z-index:1000`;document.body.appendChild(d);setTimeout(()=>d.remove(),900);}
+function showModal(t,m,b,cb){mt.innerHTML=t;mm.innerHTML=m;mb.textContent=b;mb.onclick=cb;modal.classList.add("on");}
+function quit(){window.location.href="launcher.html";}
+
+/* =======================================================
+   11. 初次引导
+   =======================================================*/
+function ask(){
+  showModal("Enter Nickname",
+    "<input id='nm' style='padding:.5rem .7rem;width:80%;font-size:1rem;margin-top:.8rem' placeholder='Nickname'><br><br>Compete on speed & skill!",
+    "Join",()=>{const v=document.getElementById("nm").value.trim();if(v){state.name=v;put("srName",v);modal.classList.remove("on");}});
+}
+if(!state.name)ask();else renderHome();unlockUI();
+if(!ls("srIntro")){showModal("Premise",
+  "Ten elite rivals guard ten arenas. Beat their times, earn points, collect vocabulary, climb the League board — and reach the APEX!",
+  "Start",()=>{modal.classList.remove("on");put("srIntro",1);});}
+</script>
+</body>
+</html>
