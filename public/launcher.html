@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Tutorcade — Learn by Playing</title>
+
+<!-- Cloudflare Turnstile -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+<style>
+:root{
+  --bg:#e9ecf2;--glass:#ffffffe0;--border:#ffffff38;
+  --primary:#204368;--primary-dark:#19324d;
+  --accent:#c89c3c;--radius:1rem;--shadow:0 8px 22px rgba(0,0,0,.07);
+  --blur:14px;
+}
+*,::before,::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,'Segoe UI',Roboto;background:var(--bg);color:#333;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
+button,select,input,textarea{font:inherit}
+.container{width:min(92%,1600px);margin:auto;position:relative}
+.btn{padding:.7rem 1.5rem;border:none;border-radius:var(--radius);font-weight:600;transition:.25s;cursor:pointer}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+.btn-ghost{background:none;border:2px solid #fff;color:#fff}.btn-ghost:hover{background:#ffffff26}
+.btn-disabled{background:#a5a8b0;color:#fff;cursor:not-allowed}
+.btn-red{background:#e76a6a;color:#fff}
+.glass{background:var(--glass);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);animation:fadeIn .6s ease}
+.hidden{display:none !important}
+
+/* header */
+header{background:linear-gradient(135deg,#204368 0%,#19324d 100%);color:#fff;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1000}
+.logo{font-size:1.7rem;font-weight:700;display:flex;align-items:center;gap:.5rem}
+.header-right{display:flex;align-items:center;gap:1rem;position:relative}
+nav ul{display:flex;list-style:none;gap:1.2rem}
+nav li{cursor:pointer;font-weight:600;position:relative}
+nav li::after{content:'';position:absolute;left:0;bottom:-4px;width:0;height:2px;background:#fff;border-radius:1px;transition:.3s}
+nav li:hover::after{width:100%}
+.profile-link{cursor:pointer;text-decoration:underline}
+
+/* user dropdown */
+.user-dropdown{position:absolute;top:120%;right:0;width:180px;background:var(--glass);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:.4rem 0;display:none;flex-direction:column;z-index:1500}
+.user-dropdown a{padding:.6rem 1rem;color:#204368;text-decoration:none;font-weight:500;transition:background .2s}
+.user-dropdown a:hover{background:#20436822}
+
+/* sections */
+main{flex:1}
+.section{display:none;padding:3rem 0}
+.active{display:block}
+
+/* hero */
+.hero{
+  min-height:88vh;
+  background:linear-gradient(rgba(32,67,104,.85),rgba(25,50,77,.85)),url("img/hero_bg.jpg") center/cover no-repeat;
+  color:#fff;display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:2.2rem;padding:4rem 1rem
+}
+.hero-content{max-width:600px;padding:0 1rem}
+.hero-content h1{font-size:clamp(2.4rem,5vw,3.4rem);line-height:1.2;margin-bottom:1rem}
+.hero-content p{font-size:1.15rem;margin-bottom:2rem}
+.hero-img img{max-width:420px;width:100%;border-radius:var(--radius);box-shadow:var(--shadow)}
+
+/* features（上移覆盖一点 hero） */
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:2rem;margin-top:-10rem}
+.feature-card{padding:2rem;display:flex;flex-direction:column;gap:.9rem}
+.feature-card svg{width:48px;height:48px;fill:var(--primary)}
+
+/* plaza */
+.plaza-controls{display:flex;flex-wrap:wrap;gap:1rem;margin-bottom:1.6rem}
+.category-btn{border:1px solid var(--primary);background:none;color:var(--primary);padding:.45rem 1rem;border-radius:var(--radius);cursor:pointer;font-weight:600}
+.category-btn.active{background:var(--primary);color:#fff}
+#searchInput{flex:1;min-width:200px;padding:.6rem 1rem;border-radius:.7rem;border:1px solid #b1b5c2}
+
+/* grid */
+.game-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem}
+@media(max-width:1100px){.game-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:750px){.game-grid{grid-template-columns:1fr}}
+.game-card{display:flex;flex-direction:column;gap:1rem;padding:1rem}
+.game-thumb{width:100%;height:200px;background:#d9dee7;border-radius:var(--radius);overflow:hidden;display:flex;align-items:center;justify-content:center}
+.game-thumb img{width:100%;height:100%;object-fit:cover}
+.game-card.disabled{opacity:.55}
+
+/* pager */
+#pager{display:flex;justify-content:center;align-items:center;gap:1rem;margin-top:2rem}
+#pager button{padding:.6rem 1rem;border:none;border-radius:.6rem;font-weight:600}
+#pager span{font-weight:600}
+
+/* tasks */
+#taskList{list-style:none;padding:0;margin-top:1rem}
+.task-item{display:flex;align-items:center;gap:.6rem;padding:.6rem 0;border-bottom:1px solid #d9dee7}
+.task-item.completed .text{text-decoration:line-through;color:#999}
+.task-item span.points{font-weight:600;margin-left:auto}
+
+/* auth forms */
+.form-row{margin-bottom:1rem}
+label{display:block;margin-bottom:.35rem;font-weight:600}
+#cfAuth,#cfForgot{min-height:78px}
+
+/* AI generator */
+#aiWrap .input-row{display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem}
+#aiPrompt{flex:1;min-width:260px;padding:.8rem;border-radius:.6rem;border:1px solid #b1b5c2}
+#aiLoading{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:2000}
+.spinner{width:68px;height:68px;border-radius:50%;border:6px solid #fff;border-top-color:#204368;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#aiResult{display:none;margin-top:1.2rem}
+#aiPreview{width:100%;height:520px;border:1px solid #d9dee7;border-radius:.8rem;background:#fff}
+#codeEditorWrap{display:none;margin-top:1rem}
+#codeArea{width:100%;height:320px;border:1px solid #d9dee7;border-radius:.6rem;padding:.6rem;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
+
+/* UGC community */
+.ugc-controls{display:flex;gap:1rem;flex-wrap:wrap;margin:1rem 0}
+#ugcSearch{flex:1;min-width:220px;padding:.6rem 1rem;border-radius:.7rem;border:1px solid #b1b5c2}
+.ugc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem}
+@media(max-width:1100px){.ugc-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:750px){.ugc-grid{grid-template-columns:1fr}}
+.ugc-card{padding:1rem;display:flex;flex-direction:column;gap:.6rem}
+.ugc-meta{font-size:.9rem;color:#666}
+.ugc-actions{display:flex;gap:.6rem;margin-top:.6rem}
+#ugcPager{display:flex;gap:.8rem;align-items:center;justify-content:center;margin-top:1rem}
+#ugcPager button{padding:.5rem 1rem;border:none;border-radius:.6rem;font-weight:600}
+
+/* modal for play UGC */
+#playModal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:3000}
+.play-box{width:min(1000px,92vw);background:#fff;border-radius:1rem;padding:1rem}
+.play-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem}
+#ugcIframe{width:100%;height:560px;border:1px solid #d9dee7;border-radius:.6rem}
+
+/* footer */
+footer{font-size:.85rem;color:#666;text-align:center;padding:1rem 0}
+
+/* anim */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header>
+  <div class="logo"><img src="/img/logo.png" alt="Tutorcade Logo" style="height:36px">Tutorcade</div>
+  <div class="header-right">
+    <button id="btnLogin" class="btn btn-ghost" onclick="show('auth')">Login</button>
+    <nav id="nav" class="hidden">
+      <ul>
+        <li data-target="plaza" data-i="nav_plaza">Game Library</li>
+        <li data-target="ai">AI Game</li>
+        <li data-target="community">Community</li>
+        <li data-target="news">News</li>
+        <li data-target="tasks">Daily Tasks</li>
+        <li data-target="donate" data-i="nav_donate">Donate</li>
+      </ul>
+    </nav>
+    <span id="usernameLabel" class="profile-link hidden"></span>
+    <button id="btnLogout" class="btn btn-ghost hidden">Logout</button>
+
+    <div id="userDropdown" class="user-dropdown">
+      <a href="#" data-target="profile">Profile</a>
+      <a href="#" data-target="settings">Settings</a>
+    </div>
+  </div>
+</header>
+
+<!-- ============ MAIN ============ -->
+<main>
+
+<!-- HOME -->
+<section id="home" class="section active">
+  <div class="hero container">
+    <div class="hero-content">
+      <h1 data-i="hero_title">Learn through Play</h1>
+      <p data-i="hero_desc">Tutorcade brings together engaging mini‑games that turn classroom subjects into fun challenges. Earn points, track progress, and discover the joy of learning!</p>
+      <button id="btnStartAdventure" class="btn btn-primary" onclick="show('auth')">Start Your Adventure</button>
+    </div>
+    <div class="hero-img"><img id="heroSlide" src="img/slide1.jpg" alt="Hero"></div>
+  </div>
+
+  <div class="feature-grid container">
+    <div class="glass feature-card"><svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zm0 13L2 10v7l10 5 10-5v-7l-10 5z"/></svg><h3 data-i="f1_title">Gamified Curriculum</h3><p data-i="f1_desc">Curriculum‑aligned levels that feel like quests, not homework.</p></div>
+    <div class="glass feature-card"><svg viewBox="0 0 24 24"><path d="M12 2 3 6v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V6l-9-4z"/></svg><h3 data-i="f2_title">Achievement Badges</h3><p data-i="f2_desc">Collect badges as you master new concepts.</p></div>
+    <div class="glass feature-card"><svg viewBox="0 0 24 24"><path d="M3 17h18v2H3zM6 10h2v5H6zm5-4h2v9h-2zm5 8h2v1h-2z"/></svg><h3 data-i="f3_title">Progress Analytics</h3><p data-i="f3_desc">Visual dashboards make improvement tangible.</p></div>
+    <div class="glass feature-card"><svg viewBox="0 0 24 24"><path d="M7 13h4v8H7zM13 9h4v12h-4zM19 5h4v16h-4zM1 17h4v4H1z"/></svg><h3 data-i="f4_title">Class Leaderboards</h3><p data-i="f4_desc">Inspire healthy competition & teamwork.</p></div>
+  </div>
+</section>
+
+<!-- AUTH -->
+<section id="auth" class="section">
+  <div class="glass container" style="max-width:520px;padding:2.4rem">
+    <h2 data-i="auth_title" style="margin-bottom:2rem">Login / Sign Up</h2>
+
+    <div class="form-row">
+      <label>Mode</label>
+      <select id="authMode" class="glass" style="width:100%;padding:.65rem;margin-bottom:.6rem">
+        <option value="login" data-i="mode_login">Login</option>
+        <option value="register" data-i="mode_register">Register</option>
+      </select>
+    </div>
+
+    <div class="form-row"><label>Username</label>
+      <input id="authUser" class="glass" placeholder="Username" style="width:100%;padding:.8rem">
+    </div>
+
+    <div class="form-row"><label>Password</label>
+      <input id="authPwd" type="password" class="glass" placeholder="Password" style="width:100%;padding:.8rem">
+    </div>
+
+    <div id="confirmRow" class="form-row" style="display:none">
+      <label>Confirm Password</label>
+      <input id="authPwd2" type="password" class="glass" placeholder="Confirm Password" style="width:100%;padding:.8rem">
+    </div>
+
+    <div id="sqRow" class="form-row" style="display:none">
+      <label>Security Question (optional)</label>
+      <input id="secQuestion" class="glass" placeholder="e.g. Your first pet's name?" style="width:100%;padding:.8rem">
+    </div>
+    <div id="saRow" class="form-row" style="display:none">
+      <label>Security Answer (optional)</label>
+      <input id="secAnswer" class="glass" placeholder="Answer" style="width:100%;padding:.8rem">
+    </div>
+
+    <div class="form-row">
+      <div id="cfAuth">Loading verification…</div>
+    </div>
+
+    <div style="display:flex;gap:1rem;align-items:center">
+      <button id="btnAuthSubmit" class="btn btn-primary" onclick="authSubmit()">Submit</button>
+      <button id="btnAuthCancel" class="btn">Cancel</button>
+      <a href="#" id="linkForgot">Forgot password?</a>
+    </div>
+  </div>
+</section>
+
+<!-- FORGOT PASSWORD -->
+<section id="forgot" class="section">
+  <div class="glass container" style="max-width:520px;padding:2.4rem">
+    <h2>Forgot Password</h2>
+    <div class="form-row">
+      <label>Username</label>
+      <input id="fpUser" class="glass" placeholder="Your username" style="width:100%;padding:.8rem">
+    </div>
+    <div class="form-row">
+      <div id="cfForgot">Loading verification…</div>
+    </div>
+    <div class="form-row" style="display:flex;gap:1rem">
+      <button id="btnForgotStart" class="btn btn-primary">Get Security Question</button>
+      <button id="btnForgotBack" class="btn">Back</button>
+    </div>
+
+    <div id="fpStep2" class="hidden">
+      <div class="form-row">
+        <label>Security Question</label>
+        <input id="fpQuestion" class="glass" disabled style="width:100%;padding:.8rem">
+      </div>
+      <div class="form-row">
+        <label>Your Answer</label>
+        <input id="fpAnswer" class="glass" placeholder="Answer" style="width:100%;padding:.8rem">
+      </div>
+      <div class="form-row">
+        <label>New Password</label>
+        <input id="fpNewPwd" type="password" class="glass" placeholder="New password" style="width:100%;padding:.8rem">
+      </div>
+      <div class="form-row">
+        <label>Confirm New Password</label>
+        <input id="fpNewPwd2" type="password" class="glass" placeholder="Confirm new password" style="width:100%;padding:.8rem">
+      </div>
+      <div class="form-row" style="display:flex;gap:1rem">
+        <button id="btnForgotVerify" class="btn btn-primary">Reset Password</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PLAZA -->
+<section id="plaza" class="section">
+  <div class="container">
+    <h2 style="margin-bottom:1.5rem" data-i="plaza_title">Game Library</h2>
+
+    <div class="plaza-controls">
+      <div id="catBtns" style="display:flex;gap:.6rem;flex-wrap:wrap">
+        <button class="category-btn active" data-cat="all">All</button>
+        <button class="category-btn" data-cat="Business">Business</button>
+        <button class="category-btn" data-cat="Biology">Biology</button>
+        <button class="category-btn" data-cat="Math">Math</button>
+        <button class="category-btn" data-cat="History">History</button>
+        <button class="category-btn" data-cat="Reading">Reading</button>
+        <button class="category-btn" data-cat="More">More</button>
+      </div>
+      <input id="searchInput" placeholder="Search games...">
+    </div>
+
+    <div id="gameGrid" class="game-grid"></div>
+
+    <div id="pager" class="hidden">
+      <button id="prevBtn" class="btn btn-primary">Prev</button>
+      <span id="pageInfo"></span>
+      <button id="nextBtn" class="btn btn-primary">Next</button>
+    </div>
+  </div>
+</section>
+
+<!-- === AI GENERATOR === -->
+<section id="ai" class="section">
+  <div class="container" id="aiWrap">
+    <h2 style="margin-bottom:1rem">AI‑Generated Learning Game</h2>
+    <p>Describe what you want to learn (topic, level, examples). The AI will generate a playable single‑file HTML mini‑game.</p>
+    <div class="input-row">
+      <input id="aiPrompt" placeholder="e.g. AP Chemistry — equilibrium constant (Kc) concept with practice questions">
+      <select id="aiCategory" class="glass" style="padding:.6rem">
+        <option>Biology</option><option>Chemistry</option><option>Math</option>
+        <option>History</option><option>Reading</option><option>More</option>
+      </select>
+      <button id="btnAIGenerate" class="btn btn-primary">Generate Game</button>
+    </div>
+
+    <div id="aiLoading"><div class="spinner"></div></div>
+
+    <div id="aiResult" class="glass" style="padding:1rem">
+      <div style="display:flex;gap:.6rem;align-items:center;justify-content:flex-end;margin-bottom:.6rem">
+        <button id="btnToggleCode" class="btn">View / Edit Code</button>
+        <button id="btnRunCode" class="btn">Run</button>
+        <button id="btnPublish" class="btn btn-primary">Publish to Community</button>
+      </div>
+      <iframe id="aiPreview"></iframe>
+      <div id="codeEditorWrap">
+        <textarea id="codeArea" spellcheck="false"></textarea>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- === COMMUNITY === -->
+<section id="community" class="section">
+  <div class="container">
+    <h2 style="margin-bottom:1rem">Community</h2>
+    <div class="ugc-controls">
+      <select id="ugcCat" class="glass" style="padding:.6rem">
+        <option value="">All</option><option>Biology</option><option>Chemistry</option>
+        <option>Math</option><option>History</option><option>Reading</option><option>More</option>
+      </select>
+      <select id="ugcSort" class="glass" style="padding:.6rem">
+        <option value="latest">Latest</option>
+        <option value="popular">Popular</option>
+      </select>
+      <input id="ugcSearch" placeholder="Search shared games...">
+      <button id="btnUGCRefresh" class="btn">Refresh</button>
+    </div>
+    <div id="ugcGrid" class="ugc-grid"></div>
+    <div id="ugcPager" class="hidden">
+      <button id="ugcPrev" class="btn btn-primary">Prev</button>
+      <span id="ugcInfo"></span>
+      <button id="ugcNext" class="btn btn-primary">Next</button>
+    </div>
+  </div>
+</section>
+
+<!-- NEWS -->
+<section id="news" class="section">
+  <div class="container">
+    <h2 style="margin-bottom:1.5rem">Updates / News</h2>
+    <ul id="newsList" style="list-style:none;padding:0"></ul>
+  </div>
+</section>
+
+<!-- DAILY TASKS -->
+<section id="tasks" class="section">
+  <div class="container">
+    <h2 style="margin-bottom:1.5rem">Daily Tasks</h2>
+    <ul id="taskList"></ul>
+    <p id="taskPoints" style="margin-top:1rem;font-weight:600"></p>
+  </div>
+</section>
+
+<!-- PROFILE -->
+<section id="profile" class="section">
+  <div class="container">
+    <h2 style="margin-bottom:1.5rem">Profile</h2>
+    <p>Username: <strong id="profileUsername"></strong></p>
+    <p>Points: <strong id="profilePoints">0</strong></p>
+  </div>
+</section>
+
+<!-- SETTINGS -->
+<section id="settings" class="section">
+  <div class="container">
+    <h2 style="margin-bottom:1.5rem">Settings</h2>
+    <div class="form-row"><label>Language</label>
+      <select id="settingsLangSel">
+        <option value="en">English</option><option value="zh">中文</option>
+      </select>
+    </div>
+
+    <div class="glass" style="padding:1rem;margin:1rem 0">
+      <h3 style="margin-bottom:.8rem">Security Question</h3>
+      <div class="form-row">
+        <label>Question</label>
+        <input id="setSecQ" class="glass" placeholder="e.g. Your first pet's name?" style="width:100%;padding:.8rem">
+      </div>
+      <div class="form-row">
+        <label>Answer</label>
+        <input id="setSecA" class="glass" placeholder="Answer (stored hashed)" style="width:100%;padding:.8rem">
+      </div>
+      <button id="btnSaveQA" class="btn btn-primary">Save Security Q&A</button>
+      <p id="secQStatus" style="margin-top:.5rem;color:#204368"></p>
+    </div>
+
+    <button id="btnDeleteAccount" class="btn btn-red" style="margin-top:1rem">Delete Account</button>
+    <p style="margin-top:.6rem;font-size:.9rem;color:#c00">This will permanently delete all your data.</p>
+  </div>
+</section>
+
+<!-- DONATE -->
+<section id="donate" class="section">
+  <div class="container">
+    <h2 style="margin-bottom:2rem;text-align:center">Support Tutorcade</h2>
+
+    <div class="donate-group">
+      <h3 style="text-align:center;margin-bottom:1rem">International Support</h3>
+      <div class="donate-grid">
+        <div class="donate-item">
+          <img src="img/paypal.png" alt="PayPal">
+          <h4>PayPal</h4>
+          <button id="btnDonatePayPal">Donate via PayPal</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="donate-group">
+      <h3 style="text-align:center;margin-bottom:1rem">中国支持</h3>
+      <div class="donate-grid">
+        <div class="donate-item">
+          <img src="img/wechatpay.png" alt="WeChat Pay">
+          <h4>微信支付</h4>
+          <button id="btnDonateWeChat">扫码捐助</button>
+        </div>
+        <div class="donate-item">
+          <img src="img/alipay.png" alt="Alipay">
+          <h4>支付宝</h4>
+          <button id="btnDonateAlipay">扫码捐助</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- PLAY MODAL -->
+<div id="playModal">
+  <div class="play-box">
+    <div class="play-head">
+      <div>
+        <strong id="playTitle"></strong>
+        <div id="playMeta" class="ugc-meta"></div>
+      </div>
+      <div style="display:flex;gap:.6rem">
+        <button id="btnLike" class="btn">Like (<span id="likeCount">0</span>)</button>
+        <button id="btnClosePlay" class="btn btn-red">Close</button>
+      </div>
+    </div>
+    <iframe id="ugcIframe"></iframe>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>© 2025 Tutorcade. Author: Nero</footer>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------------- hero carousel ---------------- */
+const slides=['img/slide1.jpg','img/slide2.jpg','img/slide3.jpg'];let idx=0;
+setInterval(()=>{idx=(idx+1)%slides.length;document.getElementById('heroSlide').src=slides[idx];},4000);
+
+/* ---------------- REST helper ---------------- */
+const api = {
+  token: localStorage.getItem('tc-token') || '',
+  setToken(t){this.token=t; localStorage.setItem('tc-token',t);},
+  async call(method,url,body){
+    const opt={method,headers:{'Content-Type':'application/json',...(this.token?{Authorization:'Bearer '+this.token}:{})}};
+    if(body) opt.body=JSON.stringify(body);
+    const r=await fetch(url,opt);
+    let data=null; try{ data=await r.json(); }catch{}
+    if(!r.ok){ throw (data||{msg:'HTTP '+r.status}); }
+    return data;
+  }
+};
+
+/* ---------------- i18n (简版) ---------------- */
+const L = {
+  en:{hero_title:"Learn through Play",hero_desc:"Tutorcade brings together engaging mini‑games that turn classroom subjects into fun challenges. Earn points, track progress, and discover the joy of learning!",nav_plaza:"Game Library",nav_donate:"Donate",auth_title:"Login / Sign Up",mode_login:"Login",mode_register:"Register",plaza_title:"Game Library",f1_title:"Gamified Curriculum",f1_desc:"Curriculum‑aligned levels that feel like quests, not homework.",f2_title:"Achievement Badges",f2_desc:"Collect badges as you master new concepts.",f3_title:"Progress Analytics",f3_desc:"Visual dashboards make improvement tangible.",f4_title:"Class Leaderboards",f4_desc:"Inspire healthy competition & teamwork."},
+  zh:{hero_title:"游戏化学习",hero_desc:"Tutorcade 通过趣味小游戏将课堂知识变成闯关挑战。赢取积分、追踪进度，让学习充满乐趣！",nav_plaza:"游戏库",nav_donate:"捐赠",auth_title:"登录 / 注册",mode_login:"登录",mode_register:"注册",plaza_title:"游戏库",f1_title:"课程游戏化",f1_desc:"与教学大纲一致的关卡，学习不再枯燥。",f2_title:"成就徽章",f2_desc:"解锁新知识，收集专属徽章。",f3_title:"进度分析",f3_desc:"可视化图表让成长看得见。",f4_title:"班级排行榜",f4_desc:"激发良性竞争与团队精神。"}
+};
+let lang=localStorage.getItem('biz-lang')||'en';
+function setTexts(){document.querySelectorAll('[data-i]').forEach(el=>{const k=el.dataset.i;if(L[lang][k])el.textContent=L[lang][k];});}
+function switchLang(v){lang=v;localStorage.setItem('biz-lang',v);setTexts();const sel=document.getElementById('settingsLangSel');if(sel)sel.value=lang;}
+document.addEventListener('DOMContentLoaded',()=>{const sel=document.getElementById('settingsLangSel');if(sel)sel.value=lang;});setTexts();
+
+/* ---------------- helpers ---------------- */
+const $$=s=>document.querySelectorAll(s), $=s=>document.querySelector(s);
+function show(id){
+  $$('.section').forEach(sec=>sec.classList.remove('active'));
+  $('#'+id).classList.add('active');
+  if(id==='auth')   ensureTurnstile('auth');
+  if(id==='forgot') ensureTurnstile('forgot');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+window.show = show; // 导出以配合内联 onclick
+
+const dropdown=$('#userDropdown'), userLabel=$('#usernameLabel');
+function toggleDropdown(show=true){dropdown.style.display=show?'flex':'none';}
+
+/* ---------------- Cloudflare Turnstile 渲染（可见时再渲染） ---------------- */
+const SITEKEY='0x4AAAAAABp1M3ooEcCVCtAK';
+let cfAuthToken='', cfForgotToken='';
+let authWidgetId=null, forgotWidgetId=null;
+
+function renderTurnstile(which){
+  const hostSel = which==='auth' ? '#cfAuth' : '#cfForgot';
+  const host = document.querySelector(hostSel);
+  if(!host) return;
+  host.innerHTML='';
+  const opts = {
+    sitekey: SITEKEY,
+    theme: 'auto',
+    appearance: 'always',
+    callback: (t)=>{ if(which==='auth') cfAuthToken=t; else cfForgotToken=t; },
+    'expired-callback': ()=>{ if(which==='auth') cfAuthToken=''; else cfForgotToken=''; },
+    'error-callback': ()=>{
+      host.innerHTML = '<div style="color:#c00;padding:.5rem">Captcha failed to load. Please check network or domain allowlist.</div>';
+    }
+  };
+  if(which==='auth'){ authWidgetId = turnstile.render(hostSel, opts); }
+  else{ forgotWidgetId = turnstile.render(hostSel, opts); }
+}
+function ensureTurnstile(which, tries=0){
+  if(window.turnstile){
+    if(which==='auth'){
+      if(authWidgetId==null) renderTurnstile('auth'); else turnstile.reset(authWidgetId);
+    }else{
+      if(forgotWidgetId==null) renderTurnstile('forgot'); else turnstile.reset(forgotWidgetId);
+    }
+  }else{
+    if(tries>50){
+      const host = document.querySelector(which==='auth' ? '#cfAuth' : '#cfForgot');
+      if(host) host.innerHTML = '<div style="color:#c00;padding:.5rem">Captcha script not available.</div>';
+      return;
+    }
+    setTimeout(()=>ensureTurnstile(which, tries+1),200);
+  }
+}
+
+/* ---------------- Plaza Search / Filter / Pagination ---------------- */
+const grid = $('#gameGrid');
+const pager = $('#pager'), prevBtn=$('#prevBtn'), nextBtn=$('#nextBtn'), pageInfo=$('#pageInfo');
+const searchInput = $('#searchInput');
+
+let ALL_CARDS=[], visibleCards=[], currentPage=1;
+const PAGE_SIZE=6;
+
+function refreshPager(){
+  const totalPages=Math.ceil(visibleCards.length/PAGE_SIZE)||1;
+  pager.classList.toggle('hidden', totalPages<=1);
+  pageInfo.textContent=`${currentPage} / ${totalPages}`;
+  prevBtn.disabled=currentPage===1; nextBtn.disabled=currentPage===totalPages;
+}
+function showPage(n=1){
+  currentPage=n; ALL_CARDS.forEach(c=>c.style.display='none');
+  visibleCards.forEach((c,i)=>{ if(i>=PAGE_SIZE*(n-1)&&i<PAGE_SIZE*n) c.style.display='flex'; });
+  refreshPager();
+}
+function applyFilter(){
+  const activeBtn = $('#catBtns .active');
+  const activeCat = (activeBtn?activeBtn.dataset.cat:'all').toLowerCase();
+  const q = searchInput.value.trim().toLowerCase();
+  visibleCards = ALL_CARDS.filter(card=>{
+    const inCat = activeCat==='all' || card.dataset.cat===activeCat;
+    const inQ   = card.dataset.title.includes(q);
+    return inCat && inQ;
+  });
+  showPage(1);
+}
+
+/* ---------------- News ---------------- */
+async function loadNews(){
+  try{
+    const list=await api.call('GET','/api/news');
+    const ul = $('#newsList'); ul.innerHTML='';
+    list.forEach(n=>{
+      const li=document.createElement('li'); li.style.marginBottom='1rem';
+      const st=document.createElement('strong'); st.textContent=n.title;
+      li.appendChild(st); li.appendChild(document.createElement('br'));
+      const d=document.createElement('span'); d.textContent=n.desc; li.appendChild(d);
+      ul.appendChild(li);
+    });
+  }catch(e){}
+}
+
+/* ---------------- Games ---------------- */
+function createGameCard(g){
+  const card = document.createElement('div');
+  card.className = 'glass game-card' + (g.ready ? '' : ' disabled');
+  card.dataset.id = g.id;
+  card.dataset.title = String(g.title||'').toLowerCase();
+  card.dataset.cat = String(g.category||'').toLowerCase();
+
+  const thumb = document.createElement('div');
+  thumb.className='game-thumb';
+  const img = document.createElement('img'); img.src=g.thumb; img.alt=g.title; thumb.appendChild(img);
+
+  const h3=document.createElement('h3'); h3.textContent=g.title;
+  const p=document.createElement('p'); p.textContent=g.description || g.desc || '';
+
+  const btn=document.createElement('button');
+  btn.className='btn ' + (g.ready ? 'btn-primary':'btn-disabled');
+  btn.disabled=!g.ready; btn.textContent=g.ready?'Play':'Coming Soon';
+  if(g.ready){ btn.dataset.path=g.path; btn.dataset.gid=g.id; }
+
+  card.appendChild(thumb); card.appendChild(h3); card.appendChild(p); card.appendChild(btn);
+  return card;
+}
+async function loadGames(){
+  try{
+    const list=await api.call('GET','/api/games');
+    grid.innerHTML=''; list.forEach(g=>grid.appendChild(createGameCard(g)));
+    ALL_CARDS=[...grid.children]; applyFilter();
+  }catch(e){ alert('Failed to load games'); }
+}
+
+/* ---------------- Activity tracking ---------------- */
+const SAFE_GAME_PATH = /^([A-Za-z0-9_\-\/]+\.html)$/;
+async function playGame(gameId, path){
+  try{
+    if(!api.token) { alert('Please login first'); show('auth'); return; }
+    if(!SAFE_GAME_PATH.test(path)){ alert('Invalid game path'); return; }
+    const {sessionId}=await api.call('POST','/api/activity/start',{gameId});
+    localStorage.setItem('tc-session',sessionId);
+    location.href=path;
+  }catch(e){ alert(e.msg||'Cannot start session'); }
+}
+document.addEventListener('DOMContentLoaded', async ()=>{
+  const sid=localStorage.getItem('tc-session');
+  if(sid){
+    if(api.token){ try{ await api.call('POST','/api/activity/end',{sessionId:+sid}); }catch(e){} }
+    localStorage.removeItem('tc-session');
+  }
+});
+window.playGame = playGame;
+
+/* ---------------- Daily Tasks ---------------- */
+async function refreshTasks(){
+  if(!api.token){
+    $('#taskList').innerHTML='<li>Please log in.</li>';
+    $('#taskPoints').textContent='';
+    return;
+  }
+  try{
+    const list=await api.call('GET','/api/tasks');
+    const pts=list[list.length-1].userPoints;
+    const items=list.slice(0,-1);
+    const ul=$('#taskList'); ul.innerHTML='';
+    items.forEach(t=>{
+      const li=document.createElement('li'); li.className='task-item'+(t.done?' completed':'');
+      const spanText=document.createElement('span'); spanText.className='text'; spanText.textContent=t.text;
+      const spanPts=document.createElement('span'); spanPts.className='points'; spanPts.textContent=`${t.points} pts`;
+      li.appendChild(spanText); li.appendChild(spanPts); ul.appendChild(li);
+    });
+    $('#taskPoints').textContent=`Total points: ${pts}`;
+    $('#profilePoints').textContent=pts;
+  }catch(e){}
+}
+
+/* ---------------- Auth ---------------- */
+const authModeSel = $('#authMode'), confirmRow = $('#confirmRow'), sqRow=$('#sqRow'), saRow=$('#saRow');
+function toggleAuthMode(){
+  const reg = authModeSel.value==='register';
+  confirmRow.style.display = reg ? 'block':'none';
+  sqRow.style.display = saRow.style.display = reg ? 'block':'none';
+}
+authModeSel.addEventListener('change',toggleAuthMode); toggleAuthMode();
+
+async function authSubmit(){
+  const u=$('#authUser').value.trim(), p=$('#authPwd').value.trim();
+  const mode=authModeSel.value;
+  if(!u||!p) return alert('Input required');
+
+  let cfToken = cfAuthToken;
+  if(!cfToken && window.turnstile && authWidgetId!==null){
+    cfToken = turnstile.getResponse(authWidgetId);
+  }
+  if(!cfToken){ alert('Please complete the captcha'); return; }
+
+  try{
+    if(mode==='register'){
+      const p2=$('#authPwd2').value.trim(); if(p!==p2) return alert('Passwords do not match');
+      const secQuestion=$('#secQuestion').value.trim(), secAnswer=$('#secAnswer').value.trim();
+      await api.call('POST','/api/register',{username:u,password:p,cfToken,secQuestion,secAnswer});
+      alert('Registered! Please login.');
+      authModeSel.value='login'; toggleAuthMode();
+      if(window.turnstile && authWidgetId!==null) turnstile.reset(authWidgetId);
+      return;
+    }
+    const {token,username,points}=await api.call('POST','/api/login',{username:u,password:p,cfToken});
+    api.setToken(token); afterLogin(username,points);
+    if(window.turnstile && authWidgetId!==null) turnstile.reset(authWidgetId);
+  }catch(e){
+    const extra = e.cfErrors && e.cfErrors.length ? ' ['+e.cfErrors.join(', ')+']' : '';
+    alert((e.msg||'Error')+extra);
+    if(window.turnstile && authWidgetId!==null) turnstile.reset(authWidgetId);
+  }
+}
+window.authSubmit = authSubmit;
+
+function afterLogin(username,points){
+  $('#btnLogin').classList.add('hidden'); $('#nav').classList.remove('hidden');
+  userLabel.classList.remove('hidden'); $('#btnLogout').classList.remove('hidden');
+  userLabel.textContent=username; $('#profileUsername').textContent=username; $('#profilePoints').textContent=points;
+  loadSecurityQuestion(); refreshTasks(); show('plaza');
+  if(!window.__tasksTimer){ window.__tasksTimer = setInterval(refreshTasks,30000); }
+}
+
+async function logout(){
+  try{
+    const sid=localStorage.getItem('tc-session');
+    if(sid && api.token){ try{ await api.call('POST','/api/activity/end',{sessionId:+sid}); }catch(e){} }
+  } finally {
+    localStorage.removeItem('tc-session');
+    api.setToken('');
+    if(window.__tasksTimer){ clearInterval(window.__tasksTimer); window.__tasksTimer=null; }
+    $('#btnLogin').classList.remove('hidden'); $('#nav').classList.add('hidden');
+    userLabel.classList.add('hidden'); $('#btnLogout').classList.add('hidden'); toggleDropdown(false);
+    $('#profileUsername').textContent=''; $('#profilePoints').textContent='0';
+    show('home');
+  }
+}
+window.logout = logout;
+
+/* ---------------- Forgot Password ---------------- */
+let lastResetUser = '';
+async function forgotStart(){
+  const u=$('#fpUser').value.trim(); if(!u) return alert('Enter username first');
+  let cfToken = cfForgotToken;
+  if(!cfToken && window.turnstile && forgotWidgetId!==null){
+    cfToken = turnstile.getResponse(forgotWidgetId);
+  }
+  if(!cfToken){ alert('Please complete the captcha'); return; }
+  try{
+    const {question} = await api.call('POST','/api/forgot/start',{username:u,cfToken});
+    $('#fpQuestion').value = question; $('#fpStep2').classList.remove('hidden'); lastResetUser = u;
+    if(window.turnstile && forgotWidgetId!==null) { turnstile.reset(forgotWidgetId); cfForgotToken=''; }
+  }catch(e){
+    const extra = e.cfErrors && e.cfErrors.length ? ' ['+e.cfErrors.join(', ')+']' : '';
+    alert((e.msg||'Cannot start reset')+extra);
+    if(window.turnstile && forgotWidgetId!==null) turnstile.reset(forgotWidgetId);
+  }
+}
+async function forgotVerify(){
+  const ans=$('#fpAnswer').value.trim(), np=$('#fpNewPwd').value.trim(), np2=$('#fpNewPwd2').value.trim();
+  if(np!==np2) return alert('Passwords do not match');
+  let cfToken = cfForgotToken;
+  if(!cfToken && window.turnstile && forgotWidgetId!==null){
+    cfToken = turnstile.getResponse(forgotWidgetId);
+  }
+  if(!cfToken){ alert('Please complete the captcha'); return; }
+  try{
+    await api.call('POST','/api/forgot/verify',{username:lastResetUser,answer:ans,newPassword:np,cfToken});
+    alert('Password reset. Please login.'); show('auth');
+    $('#fpUser').value=''; $('#fpQuestion').value=''; $('#fpAnswer').value=''; $('#fpNewPwd').value=''; $('#fpNewPwd2').value='';
+    $('#fpStep2').classList.add('hidden');
+    if(window.turnstile && forgotWidgetId!==null) turnstile.reset(forgotWidgetId);
+  }catch(e){
+    const extra = e.cfErrors && e.cfErrors.length ? ' ['+e.cfErrors.join(', ')+']' : '';
+    alert((e.msg||'Reset failed')+extra);
+    if(window.turnstile && forgotWidgetId!==null) turnstile.reset(forgotWidgetId);
+  }
+}
+
+/* ---------------- Security Q&A in Settings ---------------- */
+async function loadSecurityQuestion(){
+  try{
+    const {question}=await api.call('GET','/api/security-question');
+    $('#setSecQ').value = question || ''; $('#setSecA').value = '';
+    $('#secQStatus').textContent = question ? 'Security question is set.' : 'No security question set yet.';
+  }catch(e){}
+}
+async function saveSecurityQA(){
+  if(!api.token) return alert('Please log in first');
+  const question=$('#setSecQ').value.trim(), answer=$('#setSecA').value.trim();
+  if(!question || !answer) { if(!confirm('Empty values will clear your security QA. Continue?')) return; }
+  try{ await api.call('PUT','/api/security-question',{question,answer}); $('#secQStatus').textContent = question ? 'Saved.' : 'Cleared.'; alert('Saved.'); }
+  catch(e){ alert(e.msg||'Failed to save'); }
+}
+window.saveSecurityQA = saveSecurityQA;
+
+/* ---------------- AI Generator ---------------- */
+const aiPrompt = $('#aiPrompt'), aiCat = $('#aiCategory');
+const aiLoading = $('#aiLoading'), aiResult = $('#aiResult'), aiPreview = $('#aiPreview');
+const codeWrap = $('#codeEditorWrap'), codeArea = $('#codeArea');
+
+function setLoading(b){ aiLoading.style.display = b ? 'flex' : 'none'; }
+function runPreview(html){ aiPreview.srcdoc = html; }
+
+async function doGenerate(){
+  if(!api.token){ alert('Please log in first'); show('auth'); return; }
+  const p = aiPrompt.value.trim();
+  if(!p) return alert('Please enter what you want to learn');
+  setLoading(true);
+  try{
+    const {html} = await api.call('POST','/api/ai/generate',{prompt:p});
+    aiResult.style.display='block';
+    codeWrap.style.display='none'; // 默认不展示代码
+    codeArea.value = html;
+    runPreview(html);
+    show('ai');
+  }catch(e){
+    alert(e.msg||'AI generate failed');
+  }finally{
+    setLoading(false);
+  }
+}
+
+function toggleCode(){
+  if(aiResult.style.display!=='block') return;
+  codeWrap.style.display = codeWrap.style.display==='none' ? 'block' : 'none';
+}
+function reRun(){
+  const html = codeArea.value;
+  runPreview(html);
+}
+
+async function publishUGC(){
+  if(!api.token){ alert('Please log in first'); show('auth'); return; }
+  const title = prompt('Title for this game (required, ≤120 chars):', 'My Learning Game');
+  if(!title) return;
+  const desc  = prompt('Short description (≤300 chars):', 'An AI-generated practice mini‑game.');
+  const category = aiCat.value || 'More';
+  try{
+    const {id} = await api.call('POST','/api/ugc/publish',{title,category,desc,html:codeArea.value});
+    alert('Published! It is now visible in Community.');
+    show('community'); await loadUGC(true);
+  }catch(e){ alert(e.msg||'Publish failed'); }
+}
+
+/* ---------------- UGC Community ---------------- */
+const ugcGrid = $('#ugcGrid'), ugcCat = $('#ugcCat'), ugcSort = $('#ugcSort'), ugcSearch = $('#ugcSearch');
+const ugcPager = $('#ugcPager'), ugcPrev=$('#ugcPrev'), ugcNext=$('#ugcNext'), ugcInfo=$('#ugcInfo');
+let ugcPage=1, ugcPageSize=9, ugcItems=[];
+
+async function loadUGC(reset=false){
+  if(reset) ugcPage=1;
+  const params = new URLSearchParams({
+    page: ugcPage, pageSize: ugcPageSize,
+    sort: ugcSort.value || 'latest'
+  });
+  if(ugcCat.value) params.set('cat', ugcCat.value);
+  if(ugcSearch.value.trim()) params.set('q', ugcSearch.value.trim());
+  try{
+    ugcItems = await api.call('GET','/api/ugc/list?'+params.toString());
+    renderUGC();
+  }catch(e){ alert(e.msg||'Load failed'); }
+}
+function renderUGC(){
+  ugcGrid.innerHTML='';
+  if(ugcItems.length===0){
+    ugcGrid.innerHTML='<div class="glass ugc-card">No results.</div>';
+    ugcPager.classList.add('hidden'); return;
+  }
+  ugcItems.forEach(it=>{
+    const card=document.createElement('div'); card.className='glass ugc-card';
+    const h3=document.createElement('h3'); h3.textContent=it.title; card.appendChild(h3);
+    const meta=document.createElement('div'); meta.className='ugc-meta';
+    meta.textContent=`${it.category} • by ${it.username} • ${new Date(it.created_at).toLocaleString()}`;
+    card.appendChild(meta);
+    const p=document.createElement('p'); p.textContent=it.desc; card.appendChild(p);
+    const act=document.createElement('div'); act.className='ugc-actions';
+    const btnPlay=document.createElement('button'); btnPlay.className='btn btn-primary'; btnPlay.textContent='Play';
+    btnPlay.addEventListener('click',()=>openPlay(it.id,it.title,meta.textContent,it.likes));
+    const like=document.createElement('button'); like.className='btn'; like.textContent=`♥ ${it.likes}`;
+    like.addEventListener('click',()=>likeUGC(it.id));
+    act.appendChild(btnPlay); act.appendChild(like); card.appendChild(act);
+    ugcGrid.appendChild(card);
+  });
+  ugcPager.classList.remove('hidden');
+  ugcInfo.textContent = `Page ${ugcPage}`;
+  ugcPrev.disabled = ugcPage<=1;
+}
+ugcPrev.addEventListener('click',()=>{ if(ugcPage>1){ ugcPage--; loadUGC(); } });
+ugcNext.addEventListener('click',()=>{ ugcPage++; loadUGC(); });
+
+async function likeUGC(id){
+  if(!api.token){ alert('Please log in first'); return; }
+  try{
+    await api.call('POST','/api/ugc/like',{gameId:id});
+    await loadUGC();
+  }catch(e){ alert(e.msg||'Like failed'); }
+}
+
+/* play modal */
+const playModal=$('#playModal'), ugcIframe=$('#ugcIframe'), playTitle=$('#playTitle'), playMeta=$('#playMeta'), likeCount=$('#likeCount']);
+let currentPlayId=0;
+function openPlay(id,title,meta,likes){
+  currentPlayId=id; playTitle.textContent=title; playMeta.textContent=meta; likeCount.textContent=likes;
+  api.call('GET','/api/ugc/get/'+id).then(row=>{
+    ugcIframe.srcdoc=row.html || '<h3>Empty</h3>';
+    likeCount.textContent=row.likes||0;
+  }).catch(()=>{ ugcIframe.srcdoc='<h3>Failed to load game</h3>'; });
+  playModal.style.display='flex';
+}
+$('#btnClosePlay').addEventListener('click',()=>{ playModal.style.display='none'; ugcIframe.srcdoc=''; });
+$('#btnLike').addEventListener('click',async ()=>{
+  if(!api.token) return alert('Please log in first');
+  try{
+    const {likes}=await api.call('POST','/api/ugc/like',{gameId:currentPlayId});
+    likeCount.textContent=likes;
+  }catch(e){ alert(e.msg||'Like failed'); }
+});
+
+/* ---------------- Auto login ---------------- */
+async function autoLogin(){
+  if(!api.token) return;
+  try{
+    const payload=JSON.parse(atob(api.token.split('.')[1]));
+    const {points}=await api.call('GET','/api/me/points');
+    afterLogin(payload.username,points);
+  }catch{ api.setToken(''); }
+}
+
+/* ---------------- DOM 事件绑定 ---------------- */
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('btnLogout').addEventListener('click', logout);
+  userLabel.addEventListener('click',e=>{e.stopPropagation();toggleDropdown(dropdown.style.display!=='flex');});
+  document.addEventListener('click',()=>toggleDropdown(false));
+  document.querySelectorAll('nav li[data-target]').forEach(li=>li.addEventListener('click',()=>show(li.dataset.target)));
+  dropdown.querySelectorAll('a[data-target]').forEach(a=>{
+    a.addEventListener('click', (e)=>{ e.preventDefault(); show(a.dataset.target); toggleDropdown(false); });
+  });
+
+  // Auth
+  document.getElementById('btnAuthCancel').addEventListener('click', ()=>show('home'));
+  document.getElementById('linkForgot').addEventListener('click', (e)=>{e.preventDefault(); show('forgot');});
+
+  // Forgot
+  document.getElementById('btnForgotStart').addEventListener('click', forgotStart);
+  document.getElementById('btnForgotBack').addEventListener('click', ()=>show('auth'));
+  document.getElementById('btnForgotVerify').addEventListener('click', forgotVerify);
+
+  // Plaza
+  document.getElementById('catBtns').addEventListener('click',(e)=>{
+    const btn=e.target.closest('.category-btn'); if(!btn) return;
+    document.querySelectorAll('#catBtns .category-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active'); applyFilter();
+  });
+  document.getElementById('searchInput').addEventListener('input', applyFilter);
+  grid.addEventListener('click',(e)=>{
+    const btn=e.target.closest('button.btn-primary'); if(!btn) return;
+    const gid=+btn.dataset.gid, path=btn.dataset.path;
+    playGame(gid, path);
+  });
+
+  // AI generator
+  document.getElementById('btnAIGenerate').addEventListener('click', doGenerate);
+  document.getElementById('btnToggleCode').addEventListener('click', toggleCode);
+  document.getElementById('btnRunCode').addEventListener('click', reRun);
+  document.getElementById('btnPublish').addEventListener('click', publishUGC);
+
+  // Donate
+  document.getElementById('btnDonatePayPal').addEventListener('click', ()=>window.open('https://paypal.me/YourRealLink','_blank'));
+  document.getElementById('btnDonateWeChat').addEventListener('click', ()=>window.open('img/wechat_qr.png','_blank'));
+  document.getElementById('btnDonateAlipay').addEventListener('click', ()=>window.open('img/alipay_qr.png','_blank'));
+
+  // 初始化数据
+  loadNews();
+  loadGames();
+  autoLogin();
+  loadUGC(true);
+});
+setInterval(()=>{ if(api.token) refreshTasks(); }, 30000);
+})();
+</script>
+</body>
+</html>
