@@ -89,39 +89,16 @@ main{flex:1}
 .task-item.completed .text{text-decoration:line-through;color:#999}
 .task-item span.points{font-weight:600;margin-left:auto}
 
+/* donate */
+.donate-group{margin-bottom:2.4rem}
+.donate-grid{display:flex;flex-wrap:wrap;gap:1.6rem;justify-content:center}
+.donate-item{flex:1 1 220px;min-width:180px;text-align:center}
+.donate-item img{width:64px;height:64px;margin-bottom:.6rem}
+.donate-item button{margin-top:.6rem;padding:.5rem 1rem;border:none;border-radius:.6rem;background:var(--accent);color:#fff;font-weight:600;cursor:pointer}
+
 /* auth forms */
 .form-row{margin-bottom:1rem}
 label{display:block;margin-bottom:.35rem;font-weight:600}
-#cfAuth,#cfForgot{min-height:78px}
-
-/* AI generator */
-#aiWrap .input-row{display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem}
-#aiPrompt{flex:1;min-width:260px;padding:.8rem;border-radius:.6rem;border:1px solid #b1b5c2}
-#aiLoading{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:2000}
-.spinner{width:68px;height:68px;border-radius:50%;border:6px solid #fff;border-top-color:#204368;animation:spin 1s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-#aiResult{display:none;margin-top:1.2rem}
-#aiPreview{width:100%;height:520px;border:1px solid #d9dee7;border-radius:.8rem;background:#fff}
-#codeEditorWrap{display:none;margin-top:1rem}
-#codeArea{width:100%;height:320px;border:1px solid #d9dee7;border-radius:.6rem;padding:.6rem;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
-
-/* UGC community */
-.ugc-controls{display:flex;gap:1rem;flex-wrap:wrap;margin:1rem 0}
-#ugcSearch{flex:1;min-width:220px;padding:.6rem 1rem;border-radius:.7rem;border:1px solid #b1b5c2}
-.ugc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem}
-@media(max-width:1100px){.ugc-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:750px){.ugc-grid{grid-template-columns:1fr}}
-.ugc-card{padding:1rem;display:flex;flex-direction:column;gap:.6rem}
-.ugc-meta{font-size:.9rem;color:#666}
-.ugc-actions{display:flex;gap:.6rem;margin-top:.6rem}
-#ugcPager{display:flex;gap:.8rem;align-items:center;justify-content:center;margin-top:1rem}
-#ugcPager button{padding:.5rem 1rem;border:none;border-radius:.6rem;font-weight:600}
-
-/* modal for play UGC */
-#playModal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:3000}
-.play-box{width:min(1000px,92vw);background:#fff;border-radius:1rem;padding:1rem}
-.play-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem}
-#ugcIframe{width:100%;height:560px;border:1px solid #d9dee7;border-radius:.6rem}
 
 /* footer */
 footer{font-size:.85rem;color:#666;text-align:center;padding:1rem 0}
@@ -136,12 +113,10 @@ footer{font-size:.85rem;color:#666;text-align:center;padding:1rem 0}
 <header>
   <div class="logo"><img src="/img/logo.png" alt="Tutorcade Logo" style="height:36px">Tutorcade</div>
   <div class="header-right">
-    <button id="btnLogin" class="btn btn-ghost" onclick="show('auth')">Login</button>
+    <button id="btnLogin" class="btn btn-ghost">Login</button>
     <nav id="nav" class="hidden">
       <ul>
         <li data-target="plaza" data-i="nav_plaza">Game Library</li>
-        <li data-target="ai">AI Game</li>
-        <li data-target="community">Community</li>
         <li data-target="news">News</li>
         <li data-target="tasks">Daily Tasks</li>
         <li data-target="donate" data-i="nav_donate">Donate</li>
@@ -166,7 +141,7 @@ footer{font-size:.85rem;color:#666;text-align:center;padding:1rem 0}
     <div class="hero-content">
       <h1 data-i="hero_title">Learn through Play</h1>
       <p data-i="hero_desc">Tutorcade brings together engaging mini‑games that turn classroom subjects into fun challenges. Earn points, track progress, and discover the joy of learning!</p>
-      <button id="btnStartAdventure" class="btn btn-primary" onclick="show('auth')">Start Your Adventure</button>
+      <button id="btnStartAdventure" class="btn btn-primary">Start Your Adventure</button>
     </div>
     <div class="hero-img"><img id="heroSlide" src="img/slide1.jpg" alt="Hero"></div>
   </div>
@@ -214,12 +189,13 @@ footer{font-size:.85rem;color:#666;text-align:center;padding:1rem 0}
       <input id="secAnswer" class="glass" placeholder="Answer" style="width:100%;padding:.8rem">
     </div>
 
+    <!-- Turnstile widget -->
     <div class="form-row">
-      <div id="cfAuth">Loading verification…</div>
+      <div id="cfAuth"></div>
     </div>
 
     <div style="display:flex;gap:1rem;align-items:center">
-      <button id="btnAuthSubmit" class="btn btn-primary" onclick="authSubmit()">Submit</button>
+      <button id="btnAuthSubmit" class="btn btn-primary">Submit</button>
       <button id="btnAuthCancel" class="btn">Cancel</button>
       <a href="#" id="linkForgot">Forgot password?</a>
     </div>
@@ -235,7 +211,7 @@ footer{font-size:.85rem;color:#666;text-align:center;padding:1rem 0}
       <input id="fpUser" class="glass" placeholder="Your username" style="width:100%;padding:.8rem">
     </div>
     <div class="form-row">
-      <div id="cfForgot">Loading verification…</div>
+      <div id="cfForgot"></div>
     </div>
     <div class="form-row" style="display:flex;gap:1rem">
       <button id="btnForgotStart" class="btn btn-primary">Get Security Question</button>
@@ -290,61 +266,6 @@ footer{font-size:.85rem;color:#666;text-align:center;padding:1rem 0}
       <button id="prevBtn" class="btn btn-primary">Prev</button>
       <span id="pageInfo"></span>
       <button id="nextBtn" class="btn btn-primary">Next</button>
-    </div>
-  </div>
-</section>
-
-<!-- === AI GENERATOR === -->
-<section id="ai" class="section">
-  <div class="container" id="aiWrap">
-    <h2 style="margin-bottom:1rem">AI‑Generated Learning Game</h2>
-    <p>Describe what you want to learn (topic, level, examples). The AI will generate a playable single‑file HTML mini‑game.</p>
-    <div class="input-row">
-      <input id="aiPrompt" placeholder="e.g. AP Chemistry — equilibrium constant (Kc) concept with practice questions">
-      <select id="aiCategory" class="glass" style="padding:.6rem">
-        <option>Biology</option><option>Chemistry</option><option>Math</option>
-        <option>History</option><option>Reading</option><option>More</option>
-      </select>
-      <button id="btnAIGenerate" class="btn btn-primary">Generate Game</button>
-    </div>
-
-    <div id="aiLoading"><div class="spinner"></div></div>
-
-    <div id="aiResult" class="glass" style="padding:1rem">
-      <div style="display:flex;gap:.6rem;align-items:center;justify-content:flex-end;margin-bottom:.6rem">
-        <button id="btnToggleCode" class="btn">View / Edit Code</button>
-        <button id="btnRunCode" class="btn">Run</button>
-        <button id="btnPublish" class="btn btn-primary">Publish to Community</button>
-      </div>
-      <iframe id="aiPreview"></iframe>
-      <div id="codeEditorWrap">
-        <textarea id="codeArea" spellcheck="false"></textarea>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- === COMMUNITY === -->
-<section id="community" class="section">
-  <div class="container">
-    <h2 style="margin-bottom:1rem">Community</h2>
-    <div class="ugc-controls">
-      <select id="ugcCat" class="glass" style="padding:.6rem">
-        <option value="">All</option><option>Biology</option><option>Chemistry</option>
-        <option>Math</option><option>History</option><option>Reading</option><option>More</option>
-      </select>
-      <select id="ugcSort" class="glass" style="padding:.6rem">
-        <option value="latest">Latest</option>
-        <option value="popular">Popular</option>
-      </select>
-      <input id="ugcSearch" placeholder="Search shared games...">
-      <button id="btnUGCRefresh" class="btn">Refresh</button>
-    </div>
-    <div id="ugcGrid" class="ugc-grid"></div>
-    <div id="ugcPager" class="hidden">
-      <button id="ugcPrev" class="btn btn-primary">Prev</button>
-      <span id="ugcInfo"></span>
-      <button id="ugcNext" class="btn btn-primary">Next</button>
     </div>
   </div>
 </section>
@@ -440,23 +361,6 @@ footer{font-size:.85rem;color:#666;text-align:center;padding:1rem 0}
 
 </main>
 
-<!-- PLAY MODAL -->
-<div id="playModal">
-  <div class="play-box">
-    <div class="play-head">
-      <div>
-        <strong id="playTitle"></strong>
-        <div id="playMeta" class="ugc-meta"></div>
-      </div>
-      <div style="display:flex;gap:.6rem">
-        <button id="btnLike" class="btn">Like (<span id="likeCount">0</span>)</button>
-        <button id="btnClosePlay" class="btn btn-red">Close</button>
-      </div>
-    </div>
-    <iframe id="ugcIframe"></iframe>
-  </div>
-</div>
-
 <!-- FOOTER -->
 <footer>© 2025 Tutorcade. Author: Nero</footer>
 
@@ -476,7 +380,8 @@ const api = {
     const opt={method,headers:{'Content-Type':'application/json',...(this.token?{Authorization:'Bearer '+this.token}:{})}};
     if(body) opt.body=JSON.stringify(body);
     const r=await fetch(url,opt);
-    let data=null; try{ data=await r.json(); }catch{}
+    let data=null;
+    try{ data=await r.json(); }catch{}
     if(!r.ok){ throw (data||{msg:'HTTP '+r.status}); }
     return data;
   }
@@ -497,58 +402,39 @@ const $$=s=>document.querySelectorAll(s), $=s=>document.querySelector(s);
 function show(id){
   $$('.section').forEach(sec=>sec.classList.remove('active'));
   $('#'+id).classList.add('active');
-  if(id==='auth')   ensureTurnstile('auth');
-  if(id==='forgot') ensureTurnstile('forgot');
   window.scrollTo({top:0,behavior:'smooth'});
 }
-window.show = show; // 导出以配合内联 onclick
 
 const dropdown=$('#userDropdown'), userLabel=$('#usernameLabel');
 function toggleDropdown(show=true){dropdown.style.display=show?'flex':'none';}
 
-/* ---------------- Cloudflare Turnstile 渲染（可见时再渲染） ---------------- */
-const SITEKEY='0x4AAAAAABp1M3ooEcCVCtAK';
+/* ---------------- Cloudflare Turnstile init ---------------- */
+const SITEKEY='0x4AAAAAABp1M3ooEcCVCtAK'; // <— 你的生产 Site Key
 let cfAuthToken='', cfForgotToken='';
-let authWidgetId=null, forgotWidgetId=null;
-
-function renderTurnstile(which){
-  const hostSel = which==='auth' ? '#cfAuth' : '#cfForgot';
-  const host = document.querySelector(hostSel);
-  if(!host) return;
-  host.innerHTML='';
-  const opts = {
-    sitekey: SITEKEY,
-    theme: 'auto',
-    appearance: 'always',
-    callback: (t)=>{ if(which==='auth') cfAuthToken=t; else cfForgotToken=t; },
-    'expired-callback': ()=>{ if(which==='auth') cfAuthToken=''; else cfForgotToken=''; },
-    'error-callback': ()=>{
-      host.innerHTML = '<div style="color:#c00;padding:.5rem">Captcha failed to load. Please check network or domain allowlist.</div>';
-    }
-  };
-  if(which==='auth'){ authWidgetId = turnstile.render(hostSel, opts); }
-  else{ forgotWidgetId = turnstile.render(hostSel, opts); }
+function initTurnstile(){
+  if(!window.turnstile){setTimeout(initTurnstile,120);return;}
+  const authHost = document.getElementById('cfAuth');
+  const forgotHost = document.getElementById('cfForgot');
+  authHost.innerHTML=''; forgotHost.innerHTML='';
+  window._authWid   = turnstile.render('#cfAuth', {
+    sitekey: SITEKEY, theme:'light',
+    callback: (t)=>{ cfAuthToken=t; },
+    'expired-callback': ()=>{ cfAuthToken=''; },
+    'error-callback':   ()=>{ cfAuthToken=''; }
+  });
+  window._forgotWid = turnstile.render('#cfForgot', {
+    sitekey: SITEKEY, theme:'light',
+    callback: (t)=>{ cfForgotToken=t; },
+    'expired-callback': ()=>{ cfForgotToken=''; },
+    'error-callback':   ()=>{ cfForgotToken=''; }
+  });
 }
-function ensureTurnstile(which, tries=0){
-  if(window.turnstile){
-    if(which==='auth'){
-      if(authWidgetId==null) renderTurnstile('auth'); else turnstile.reset(authWidgetId);
-    }else{
-      if(forgotWidgetId==null) renderTurnstile('forgot'); else turnstile.reset(forgotWidgetId);
-    }
-  }else{
-    if(tries>50){
-      const host = document.querySelector(which==='auth' ? '#cfAuth' : '#cfForgot');
-      if(host) host.innerHTML = '<div style="color:#c00;padding:.5rem">Captcha script not available.</div>';
-      return;
-    }
-    setTimeout(()=>ensureTurnstile(which, tries+1),200);
-  }
-}
+document.addEventListener('DOMContentLoaded', initTurnstile);
 
-/* ---------------- Plaza Search / Filter / Pagination ---------------- */
+/* ---------------- Search / Filter / Pagination （先声明元素，避免未定义） ---------------- */
 const grid = $('#gameGrid');
 const pager = $('#pager'), prevBtn=$('#prevBtn'), nextBtn=$('#nextBtn'), pageInfo=$('#pageInfo');
+const catBtnsWrap = $('#catBtns');
 const searchInput = $('#searchInput');
 
 let ALL_CARDS=[], visibleCards=[], currentPage=1;
@@ -577,22 +463,7 @@ function applyFilter(){
   showPage(1);
 }
 
-/* ---------------- News ---------------- */
-async function loadNews(){
-  try{
-    const list=await api.call('GET','/api/news');
-    const ul = $('#newsList'); ul.innerHTML='';
-    list.forEach(n=>{
-      const li=document.createElement('li'); li.style.marginBottom='1rem';
-      const st=document.createElement('strong'); st.textContent=n.title;
-      li.appendChild(st); li.appendChild(document.createElement('br'));
-      const d=document.createElement('span'); d.textContent=n.desc; li.appendChild(d);
-      ul.appendChild(li);
-    });
-  }catch(e){}
-}
-
-/* ---------------- Games ---------------- */
+/* ---------------- 安全创建游戏卡片（无 innerHTML 注入） ---------------- */
 function createGameCard(g){
   const card = document.createElement('div');
   card.className = 'glass game-card' + (g.ready ? '' : ' disabled');
@@ -602,29 +473,62 @@ function createGameCard(g){
 
   const thumb = document.createElement('div');
   thumb.className='game-thumb';
-  const img = document.createElement('img'); img.src=g.thumb; img.alt=g.title; thumb.appendChild(img);
+  const img = document.createElement('img');
+  img.src = g.thumb; img.alt = g.title;
+  thumb.appendChild(img);
 
-  const h3=document.createElement('h3'); h3.textContent=g.title;
-  const p=document.createElement('p'); p.textContent=g.description || g.desc || '';
+  const h3 = document.createElement('h3');
+  h3.textContent = g.title;
 
-  const btn=document.createElement('button');
-  btn.className='btn ' + (g.ready ? 'btn-primary':'btn-disabled');
-  btn.disabled=!g.ready; btn.textContent=g.ready?'Play':'Coming Soon';
-  if(g.ready){ btn.dataset.path=g.path; btn.dataset.gid=g.id; }
+  const p = document.createElement('p');
+  p.textContent = g.description || g.desc || '';
 
-  card.appendChild(thumb); card.appendChild(h3); card.appendChild(p); card.appendChild(btn);
+  const btn = document.createElement('button');
+  btn.className = 'btn ' + (g.ready ? 'btn-primary' : 'btn-disabled');
+  btn.disabled = !g.ready;
+  btn.textContent = g.ready ? 'Play' : 'Coming Soon';
+  if (g.ready) {
+    btn.dataset.path = g.path;
+    btn.dataset.gid = g.id;
+  }
+
+  card.appendChild(thumb);
+  card.appendChild(h3);
+  card.appendChild(p);
+  card.appendChild(btn);
   return card;
 }
+
+/* ---------------- REST：加载新闻 / 游戏 ---------------- */
+async function loadNews(){
+  try{
+    const list=await api.call('GET','/api/news');
+    const ul = $('#newsList'); ul.innerHTML='';
+    list.forEach(n=>{
+      const li=document.createElement('li'); li.style.marginBottom='1rem';
+      const st=document.createElement('strong'); st.textContent=n.title;
+      const br=document.createElement('br');
+      const d=document.createElement('span'); d.textContent=n.desc;
+      li.appendChild(st); li.appendChild(br); li.appendChild(d);
+      ul.appendChild(li);
+    });
+  }catch(e){}
+}
+
 async function loadGames(){
   try{
     const list=await api.call('GET','/api/games');
-    grid.innerHTML=''; list.forEach(g=>grid.appendChild(createGameCard(g)));
-    ALL_CARDS=[...grid.children]; applyFilter();
-  }catch(e){ alert('Failed to load games'); }
+    grid.innerHTML='';
+    list.forEach(g=>grid.appendChild(createGameCard(g)));
+    ALL_CARDS=[...grid.children];
+    applyFilter();
+  }catch(e){
+    alert('Failed to load games');
+  }
 }
 
 /* ---------------- Activity tracking ---------------- */
-const SAFE_GAME_PATH = /^([A-Za-z0-9_\-\/]+\.html)$/;
+const SAFE_GAME_PATH = /^([A-Za-z0-9_\-\/]+\.html)$/; // 限定相对路径 .html
 async function playGame(gameId, path){
   try{
     if(!api.token) { alert('Please login first'); show('auth'); return; }
@@ -634,14 +538,16 @@ async function playGame(gameId, path){
     location.href=path;
   }catch(e){ alert(e.msg||'Cannot start session'); }
 }
+/* 返回主站时关闭未结束会话 */
 document.addEventListener('DOMContentLoaded', async ()=>{
   const sid=localStorage.getItem('tc-session');
   if(sid){
-    if(api.token){ try{ await api.call('POST','/api/activity/end',{sessionId:+sid}); }catch(e){} }
+    if(api.token){
+      try{ await api.call('POST','/api/activity/end',{sessionId:+sid}); }catch(e){}
+    }
     localStorage.removeItem('tc-session');
   }
 });
-window.playGame = playGame;
 
 /* ---------------- Daily Tasks ---------------- */
 async function refreshTasks(){
@@ -656,7 +562,8 @@ async function refreshTasks(){
     const items=list.slice(0,-1);
     const ul=$('#taskList'); ul.innerHTML='';
     items.forEach(t=>{
-      const li=document.createElement('li'); li.className='task-item'+(t.done?' completed':'');
+      const li=document.createElement('li');
+      li.className='task-item'+(t.done?' completed':'');
       const spanText=document.createElement('span'); spanText.className='text'; spanText.textContent=t.text;
       const spanPts=document.createElement('span'); spanPts.className='points'; spanPts.textContent=`${t.points} pts`;
       li.appendChild(spanText); li.appendChild(spanPts); ul.appendChild(li);
@@ -666,7 +573,7 @@ async function refreshTasks(){
   }catch(e){}
 }
 
-/* ---------------- Auth ---------------- */
+/* ---------------- Auth (login/register) ---------------- */
 const authModeSel = $('#authMode'), confirmRow = $('#confirmRow'), sqRow=$('#sqRow'), saRow=$('#saRow');
 function toggleAuthMode(){
   const reg = authModeSel.value==='register';
@@ -681,8 +588,8 @@ async function authSubmit(){
   if(!u||!p) return alert('Input required');
 
   let cfToken = cfAuthToken;
-  if(!cfToken && window.turnstile && authWidgetId!==null){
-    cfToken = turnstile.getResponse(authWidgetId);
+  if(!cfToken && window.turnstile && window._authWid){
+    cfToken = turnstile.getResponse(window._authWid);
   }
   if(!cfToken){ alert('Please complete the captcha'); return; }
 
@@ -693,19 +600,18 @@ async function authSubmit(){
       await api.call('POST','/api/register',{username:u,password:p,cfToken,secQuestion,secAnswer});
       alert('Registered! Please login.');
       authModeSel.value='login'; toggleAuthMode();
-      if(window.turnstile && authWidgetId!==null) turnstile.reset(authWidgetId);
+      if(window.turnstile && window._authWid) turnstile.reset(window._authWid);
       return;
     }
     const {token,username,points}=await api.call('POST','/api/login',{username:u,password:p,cfToken});
     api.setToken(token); afterLogin(username,points);
-    if(window.turnstile && authWidgetId!==null) turnstile.reset(authWidgetId);
+    if(window.turnstile && window._authWid) turnstile.reset(window._authWid);
   }catch(e){
     const extra = e.cfErrors && e.cfErrors.length ? ' ['+e.cfErrors.join(', ')+']' : '';
     alert((e.msg||'Error')+extra);
-    if(window.turnstile && authWidgetId!==null) turnstile.reset(authWidgetId);
+    if(window.turnstile && window._authWid) turnstile.reset(window._authWid);
   }
 }
-window.authSubmit = authSubmit;
 
 function afterLogin(username,points){
   $('#btnLogin').classList.add('hidden'); $('#nav').classList.remove('hidden');
@@ -718,7 +624,9 @@ function afterLogin(username,points){
 async function logout(){
   try{
     const sid=localStorage.getItem('tc-session');
-    if(sid && api.token){ try{ await api.call('POST','/api/activity/end',{sessionId:+sid}); }catch(e){} }
+    if(sid && api.token){
+      try{ await api.call('POST','/api/activity/end',{sessionId:+sid}); }catch(e){}
+    }
   } finally {
     localStorage.removeItem('tc-session');
     api.setToken('');
@@ -729,45 +637,48 @@ async function logout(){
     show('home');
   }
 }
-window.logout = logout;
 
 /* ---------------- Forgot Password ---------------- */
 let lastResetUser = '';
 async function forgotStart(){
   const u=$('#fpUser').value.trim(); if(!u) return alert('Enter username first');
   let cfToken = cfForgotToken;
-  if(!cfToken && window.turnstile && forgotWidgetId!==null){
-    cfToken = turnstile.getResponse(forgotWidgetId);
+  if(!cfToken && window.turnstile && window._forgotWid){
+    cfToken = turnstile.getResponse(window._forgotWid);
   }
   if(!cfToken){ alert('Please complete the captcha'); return; }
+
   try{
     const {question} = await api.call('POST','/api/forgot/start',{username:u,cfToken});
-    $('#fpQuestion').value = question; $('#fpStep2').classList.remove('hidden'); lastResetUser = u;
-    if(window.turnstile && forgotWidgetId!==null) { turnstile.reset(forgotWidgetId); cfForgotToken=''; }
+    $('#fpQuestion').value = question;
+    $('#fpStep2').classList.remove('hidden');
+    lastResetUser = u;
+    if(window.turnstile && window._forgotWid) { turnstile.reset(window._forgotWid); cfForgotToken=''; }
   }catch(e){
     const extra = e.cfErrors && e.cfErrors.length ? ' ['+e.cfErrors.join(', ')+']' : '';
     alert((e.msg||'Cannot start reset')+extra);
-    if(window.turnstile && forgotWidgetId!==null) turnstile.reset(forgotWidgetId);
+    if(window.turnstile && window._forgotWid) turnstile.reset(window._forgotWid);
   }
 }
 async function forgotVerify(){
   const ans=$('#fpAnswer').value.trim(), np=$('#fpNewPwd').value.trim(), np2=$('#fpNewPwd2').value.trim();
   if(np!==np2) return alert('Passwords do not match');
   let cfToken = cfForgotToken;
-  if(!cfToken && window.turnstile && forgotWidgetId!==null){
-    cfToken = turnstile.getResponse(forgotWidgetId);
+  if(!cfToken && window.turnstile && window._forgotWid){
+    cfToken = turnstile.getResponse(window._forgotWid);
   }
   if(!cfToken){ alert('Please complete the captcha'); return; }
+
   try{
     await api.call('POST','/api/forgot/verify',{username:lastResetUser,answer:ans,newPassword:np,cfToken});
     alert('Password reset. Please login.'); show('auth');
     $('#fpUser').value=''; $('#fpQuestion').value=''; $('#fpAnswer').value=''; $('#fpNewPwd').value=''; $('#fpNewPwd2').value='';
     $('#fpStep2').classList.add('hidden');
-    if(window.turnstile && forgotWidgetId!==null) turnstile.reset(forgotWidgetId);
+    if(window.turnstile && window._forgotWid) turnstile.reset(window._forgotWid);
   }catch(e){
     const extra = e.cfErrors && e.cfErrors.length ? ' ['+e.cfErrors.join(', ')+']' : '';
     alert((e.msg||'Reset failed')+extra);
-    if(window.turnstile && forgotWidgetId!==null) turnstile.reset(forgotWidgetId);
+    if(window.turnstile && window._forgotWid) turnstile.reset(window._forgotWid);
   }
 }
 
@@ -775,7 +686,8 @@ async function forgotVerify(){
 async function loadSecurityQuestion(){
   try{
     const {question}=await api.call('GET','/api/security-question');
-    $('#setSecQ').value = question || ''; $('#setSecA').value = '';
+    $('#setSecQ').value = question || '';
+    $('#setSecA').value = '';
     $('#secQStatus').textContent = question ? 'Security question is set.' : 'No security question set yet.';
   }catch(e){}
 }
@@ -783,133 +695,12 @@ async function saveSecurityQA(){
   if(!api.token) return alert('Please log in first');
   const question=$('#setSecQ').value.trim(), answer=$('#setSecA').value.trim();
   if(!question || !answer) { if(!confirm('Empty values will clear your security QA. Continue?')) return; }
-  try{ await api.call('PUT','/api/security-question',{question,answer}); $('#secQStatus').textContent = question ? 'Saved.' : 'Cleared.'; alert('Saved.'); }
-  catch(e){ alert(e.msg||'Failed to save'); }
-}
-window.saveSecurityQA = saveSecurityQA;
-
-/* ---------------- AI Generator ---------------- */
-const aiPrompt = $('#aiPrompt'), aiCat = $('#aiCategory');
-const aiLoading = $('#aiLoading'), aiResult = $('#aiResult'), aiPreview = $('#aiPreview');
-const codeWrap = $('#codeEditorWrap'), codeArea = $('#codeArea');
-
-function setLoading(b){ aiLoading.style.display = b ? 'flex' : 'none'; }
-function runPreview(html){ aiPreview.srcdoc = html; }
-
-async function doGenerate(){
-  if(!api.token){ alert('Please log in first'); show('auth'); return; }
-  const p = aiPrompt.value.trim();
-  if(!p) return alert('Please enter what you want to learn');
-  setLoading(true);
   try{
-    const {html} = await api.call('POST','/api/ai/generate',{prompt:p});
-    aiResult.style.display='block';
-    codeWrap.style.display='none'; // 默认不展示代码
-    codeArea.value = html;
-    runPreview(html);
-    show('ai');
-  }catch(e){
-    alert(e.msg||'AI generate failed');
-  }finally{
-    setLoading(false);
-  }
+    await api.call('PUT','/api/security-question',{question,answer});
+    $('#secQStatus').textContent = question ? 'Saved.' : 'Cleared.';
+    alert('Saved.');
+  }catch(e){ alert(e.msg||'Failed to save'); }
 }
-
-function toggleCode(){
-  if(aiResult.style.display!=='block') return;
-  codeWrap.style.display = codeWrap.style.display==='none' ? 'block' : 'none';
-}
-function reRun(){
-  const html = codeArea.value;
-  runPreview(html);
-}
-
-async function publishUGC(){
-  if(!api.token){ alert('Please log in first'); show('auth'); return; }
-  const title = prompt('Title for this game (required, ≤120 chars):', 'My Learning Game');
-  if(!title) return;
-  const desc  = prompt('Short description (≤300 chars):', 'An AI-generated practice mini‑game.');
-  const category = aiCat.value || 'More';
-  try{
-    const {id} = await api.call('POST','/api/ugc/publish',{title,category,desc,html:codeArea.value});
-    alert('Published! It is now visible in Community.');
-    show('community'); await loadUGC(true);
-  }catch(e){ alert(e.msg||'Publish failed'); }
-}
-
-/* ---------------- UGC Community ---------------- */
-const ugcGrid = $('#ugcGrid'), ugcCat = $('#ugcCat'), ugcSort = $('#ugcSort'), ugcSearch = $('#ugcSearch');
-const ugcPager = $('#ugcPager'), ugcPrev=$('#ugcPrev'), ugcNext=$('#ugcNext'), ugcInfo=$('#ugcInfo');
-let ugcPage=1, ugcPageSize=9, ugcItems=[];
-
-async function loadUGC(reset=false){
-  if(reset) ugcPage=1;
-  const params = new URLSearchParams({
-    page: ugcPage, pageSize: ugcPageSize,
-    sort: ugcSort.value || 'latest'
-  });
-  if(ugcCat.value) params.set('cat', ugcCat.value);
-  if(ugcSearch.value.trim()) params.set('q', ugcSearch.value.trim());
-  try{
-    ugcItems = await api.call('GET','/api/ugc/list?'+params.toString());
-    renderUGC();
-  }catch(e){ alert(e.msg||'Load failed'); }
-}
-function renderUGC(){
-  ugcGrid.innerHTML='';
-  if(ugcItems.length===0){
-    ugcGrid.innerHTML='<div class="glass ugc-card">No results.</div>';
-    ugcPager.classList.add('hidden'); return;
-  }
-  ugcItems.forEach(it=>{
-    const card=document.createElement('div'); card.className='glass ugc-card';
-    const h3=document.createElement('h3'); h3.textContent=it.title; card.appendChild(h3);
-    const meta=document.createElement('div'); meta.className='ugc-meta';
-    meta.textContent=`${it.category} • by ${it.username} • ${new Date(it.created_at).toLocaleString()}`;
-    card.appendChild(meta);
-    const p=document.createElement('p'); p.textContent=it.desc; card.appendChild(p);
-    const act=document.createElement('div'); act.className='ugc-actions';
-    const btnPlay=document.createElement('button'); btnPlay.className='btn btn-primary'; btnPlay.textContent='Play';
-    btnPlay.addEventListener('click',()=>openPlay(it.id,it.title,meta.textContent,it.likes));
-    const like=document.createElement('button'); like.className='btn'; like.textContent=`♥ ${it.likes}`;
-    like.addEventListener('click',()=>likeUGC(it.id));
-    act.appendChild(btnPlay); act.appendChild(like); card.appendChild(act);
-    ugcGrid.appendChild(card);
-  });
-  ugcPager.classList.remove('hidden');
-  ugcInfo.textContent = `Page ${ugcPage}`;
-  ugcPrev.disabled = ugcPage<=1;
-}
-ugcPrev.addEventListener('click',()=>{ if(ugcPage>1){ ugcPage--; loadUGC(); } });
-ugcNext.addEventListener('click',()=>{ ugcPage++; loadUGC(); });
-
-async function likeUGC(id){
-  if(!api.token){ alert('Please log in first'); return; }
-  try{
-    await api.call('POST','/api/ugc/like',{gameId:id});
-    await loadUGC();
-  }catch(e){ alert(e.msg||'Like failed'); }
-}
-
-/* play modal */
-const playModal=$('#playModal'), ugcIframe=$('#ugcIframe'), playTitle=$('#playTitle'), playMeta=$('#playMeta'), likeCount=$('#likeCount']);
-let currentPlayId=0;
-function openPlay(id,title,meta,likes){
-  currentPlayId=id; playTitle.textContent=title; playMeta.textContent=meta; likeCount.textContent=likes;
-  api.call('GET','/api/ugc/get/'+id).then(row=>{
-    ugcIframe.srcdoc=row.html || '<h3>Empty</h3>';
-    likeCount.textContent=row.likes||0;
-  }).catch(()=>{ ugcIframe.srcdoc='<h3>Failed to load game</h3>'; });
-  playModal.style.display='flex';
-}
-$('#btnClosePlay').addEventListener('click',()=>{ playModal.style.display='none'; ugcIframe.srcdoc=''; });
-$('#btnLike').addEventListener('click',async ()=>{
-  if(!api.token) return alert('Please log in first');
-  try{
-    const {likes}=await api.call('POST','/api/ugc/like',{gameId:currentPlayId});
-    likeCount.textContent=likes;
-  }catch(e){ alert(e.msg||'Like failed'); }
-});
 
 /* ---------------- Auto login ---------------- */
 async function autoLogin(){
@@ -921,55 +712,67 @@ async function autoLogin(){
   }catch{ api.setToken(''); }
 }
 
-/* ---------------- DOM 事件绑定 ---------------- */
+/* ---------------- DOM 事件绑定（移除所有内联 onclick） ---------------- */
 document.addEventListener('DOMContentLoaded', ()=>{
-  document.getElementById('btnLogout').addEventListener('click', logout);
+  // 顶部导航
+  $('#btnLogin').addEventListener('click', ()=>show('auth'));
+  $('#btnLogout').addEventListener('click', logout);
+  $('#btnStartAdventure').addEventListener('click', ()=>show('auth'));
   userLabel.addEventListener('click',e=>{e.stopPropagation();toggleDropdown(dropdown.style.display!=='flex');});
   document.addEventListener('click',()=>toggleDropdown(false));
-  document.querySelectorAll('nav li[data-target]').forEach(li=>li.addEventListener('click',()=>show(li.dataset.target)));
   dropdown.querySelectorAll('a[data-target]').forEach(a=>{
     a.addEventListener('click', (e)=>{ e.preventDefault(); show(a.dataset.target); toggleDropdown(false); });
   });
+  // 主导航
+  $$('nav li[data-target]').forEach(li=>li.addEventListener('click',()=>show(li.dataset.target)));
 
   // Auth
-  document.getElementById('btnAuthCancel').addEventListener('click', ()=>show('home'));
-  document.getElementById('linkForgot').addEventListener('click', (e)=>{e.preventDefault(); show('forgot');});
+  $('#btnAuthSubmit').addEventListener('click', authSubmit);
+  $('#btnAuthCancel').addEventListener('click', ()=>show('home'));
+  $('#linkForgot').addEventListener('click', (e)=>{e.preventDefault(); show('forgot'); if(window.turnstile && window._forgotWid) turnstile.reset(window._forgotWid);});
 
   // Forgot
-  document.getElementById('btnForgotStart').addEventListener('click', forgotStart);
-  document.getElementById('btnForgotBack').addEventListener('click', ()=>show('auth'));
-  document.getElementById('btnForgotVerify').addEventListener('click', forgotVerify);
+  $('#btnForgotStart').addEventListener('click', forgotStart);
+  $('#btnForgotBack').addEventListener('click', ()=>show('auth'));
+  $('#btnForgotVerify').addEventListener('click', forgotVerify);
 
-  // Plaza
-  document.getElementById('catBtns').addEventListener('click',(e)=>{
+  // Settings
+  $('#settingsLangSel').addEventListener('change', (e)=>switchLang(e.target.value));
+  $('#btnSaveQA').addEventListener('click', saveSecurityQA);
+  $('#btnDeleteAccount').addEventListener('click', async ()=>{
+    if(!api.token) return alert('Please log in first');
+    if(!confirm('This will permanently delete your account and all data. Continue?')) return;
+    try{ await api.call('DELETE','/api/me'); alert('Account deleted.'); logout(); }
+    catch(e){ alert(e.msg||'Delete failed'); }
+  });
+
+  // Donate
+  $('#btnDonatePayPal').addEventListener('click', ()=>window.open('https://paypal.me/YourRealLink','_blank'));
+  $('#btnDonateWeChat').addEventListener('click', ()=>window.open('img/wechat_qr.png','_blank'));
+  $('#btnDonateAlipay').addEventListener('click', ()=>window.open('img/alipay_qr.png','_blank'));
+
+  // 分类与搜索
+  catBtnsWrap.addEventListener('click',(e)=>{
     const btn=e.target.closest('.category-btn'); if(!btn) return;
-    document.querySelectorAll('#catBtns .category-btn').forEach(b=>b.classList.remove('active'));
+    $$('#catBtns .category-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active'); applyFilter();
   });
-  document.getElementById('searchInput').addEventListener('input', applyFilter);
+  searchInput.addEventListener('input', applyFilter);
+
+  // 游戏卡片点击（事件委托）
   grid.addEventListener('click',(e)=>{
     const btn=e.target.closest('button.btn-primary'); if(!btn) return;
     const gid=+btn.dataset.gid, path=btn.dataset.path;
     playGame(gid, path);
   });
 
-  // AI generator
-  document.getElementById('btnAIGenerate').addEventListener('click', doGenerate);
-  document.getElementById('btnToggleCode').addEventListener('click', toggleCode);
-  document.getElementById('btnRunCode').addEventListener('click', reRun);
-  document.getElementById('btnPublish').addEventListener('click', publishUGC);
-
-  // Donate
-  document.getElementById('btnDonatePayPal').addEventListener('click', ()=>window.open('https://paypal.me/YourRealLink','_blank'));
-  document.getElementById('btnDonateWeChat').addEventListener('click', ()=>window.open('img/wechat_qr.png','_blank'));
-  document.getElementById('btnDonateAlipay').addEventListener('click', ()=>window.open('img/alipay_qr.png','_blank'));
-
   // 初始化数据
   loadNews();
   loadGames();
   autoLogin();
-  loadUGC(true);
 });
+
+/* ---------------- 定时刷新任务 ---------------- */
 setInterval(()=>{ if(api.token) refreshTasks(); }, 30000);
 })();
 </script>
