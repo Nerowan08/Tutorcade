@@ -1,0 +1,19 @@
+{
+  "name": "tutorcade",
+  "version": "1.1.0",
+  "description": "Tutorcade",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "NODE_ENV=development nodemon server.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.10.1",
+    "sanitize-html": "^2.13.0"
+  }
+}
