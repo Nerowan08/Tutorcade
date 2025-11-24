@@ -15,6 +15,7 @@ const jwt     = require('jsonwebtoken');
 const mysql   = require('mysql2/promise');
 const path    = require('path');
 const https   = require('https');
+const fs      = require('fs/promises');
 
 const app = express();
 
@@ -85,6 +86,12 @@ const TURNSTILE_SECRET =
 const DEV_BYPASS_TURNSTILE = String(process.env.DEV_BYPASS_TURNSTILE||'').toLowerCase()==='true';
 console.log('[Boot] Turnstile secret present:', !!TURNSTILE_SECRET, ' DEV_BYPASS_TURNSTILE:', DEV_BYPASS_TURNSTILE);
 
+/* ---------- AI 生成游戏（通义千问） ---------- */
+const QWEN_API_KEY = process.env.QWEN_API_KEY || 'sk-5dde5eb26c3f426aae7a9268fa60bec1';
+const QWEN_ENDPOINT = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+const GENERATED_DIR = path.join(__dirname, 'public', 'generated');
+fs.mkdir(GENERATED_DIR, {recursive:true}).catch(()=>{});
+
 function clientIP(req){
   return req.headers['cf-connecting-ip']
       || (req.headers['x-forwarded-for']?.split(',')[0])
@@ -138,6 +145,36 @@ function todayRange() {
   const start = 'CURDATE()';
   const end   = 'CURDATE() + INTERVAL 1 DAY';
   return { start, end };
+}
+
+function safeTitle(s){ return (s||'').trim().substring(0,120) || 'AI Learning Game'; }
+function safeDesc(s){ return (s||'').trim().substring(0,400); }
+function safeRelPath(p){
+  const rel = (p||'').replace(/\\/g,'/');
+  if(!rel.startsWith('generated/')) return null;
+  const abs = path.normalize(path.join(GENERATED_DIR, rel.replace('generated/','')));
+  if(!abs.startsWith(GENERATED_DIR)) return null;
+  return { rel, abs };
+}
+
+async function requestQwen(topic, audience){
+  const systemPrompt = 'You are an educational game designer. Produce a single HTML document with inline CSS and vanilla JavaScript. The game must run offline with no external assets, include clear instructions, and stay under 1500 tokens. Keep code readable.';
+  const userPrompt = `Create an interactive mini-game that helps a ${audience||'student'} learn: ${topic}. The game should be friendly for classroom use and provide immediate feedback.`;
+  const r = await fetch(QWEN_ENDPOINT, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+QWEN_API_KEY},
+    body: JSON.stringify({
+      model:'qwen3-max',
+      messages:[{role:'system',content:systemPrompt},{role:'user',content:userPrompt}],
+      temperature:0.7,
+      max_tokens:1500
+    })
+  });
+  const data = await r.json();
+  if(!r.ok) throw new Error(data?.message || 'qwen api failed');
+  const html = data?.choices?.[0]?.message?.content;
+  if(!html) throw new Error('empty AI response');
+  return html;
 }
 
 /* ---------- 账户：注册 / 登录 / 注销 / 积分 ---------- */
@@ -295,6 +332,74 @@ app.get('/api/games', async (_req,res)=>{
     if(e.code==='ER_NO_SUCH_TABLE') return res.json([]); // 若后台未上架游戏则为空
     console.error('[Games] error:', e);
     res.status(500).json({msg:'cannot load games'});
+  }
+});
+
+/* ---------- AI 生成游戏 & 社区 ---------- */
+app.get('/api/ai-games', async (_req,res)=>{
+  try{
+    const rows = await q(
+      `SELECT ag.id, ag.title, ag.description, ag.path, ag.created_at, u.username
+       FROM ai_games ag
+       LEFT JOIN users u ON ag.user_id=u.id
+       WHERE ag.public=1
+       ORDER BY ag.id DESC
+       LIMIT 50`
+    );
+    res.json(rows);
+  }catch(e){
+    if(e.code==='ER_NO_SUCH_TABLE') return res.json([]);
+    console.error('[AI Games] list error:', e);
+    res.status(500).json({msg:'cannot load ai games'});
+  }
+});
+
+app.post('/api/ai-games/generate', authRequired, async (req,res)=>{
+  const {topic, audience, share, title} = req.body || {};
+  const t = safeTitle(topic);
+  if(!topic) return res.status(400).json({msg:'topic required'});
+  try{
+    const html = await requestQwen(t, audience||'student');
+    const fileName = `ai-${Date.now()}-${Math.random().toString(36).slice(2,6)}.html`;
+    const abs = path.join(GENERATED_DIR, fileName);
+    await fs.writeFile(abs, html, 'utf8');
+    const rel = `generated/${fileName}`;
+
+    let aiId=null;
+    if(share){
+      try{
+        const desc = safeDesc(`Topic: ${t} | Audience: ${audience||'student'}`);
+        const [{insertId}] = await pool.execute(
+          'INSERT INTO ai_games(user_id,title,description,path,audience,public) VALUES(?,?,?,?,?,1)',
+          [req.user.id, title||t, desc, rel, audience||'student']
+        );
+        aiId = insertId;
+      }catch(e){
+        if(e.code==='ER_NO_SUCH_TABLE'){
+          console.warn('[AI Games] ai_games table missing, skip sharing');
+        }else{
+          console.error('[AI Games] share insert error:', e);
+        }
+      }
+    }
+
+    res.json({path:rel, code:html, shared: !!aiId, aiId});
+  }catch(e){
+    console.error('[AI Games] generate error:', e);
+    res.status(500).json({msg:e.message||'generate failed'});
+  }
+});
+
+app.post('/api/ai-games/save', authRequired, async (req,res)=>{
+  const { path: relPath, code } = req.body || {};
+  const safe = safeRelPath(relPath);
+  if(!safe) return res.status(400).json({msg:'invalid path'});
+  try{
+    await fs.writeFile(safe.abs, String(code||''), 'utf8');
+    res.json({ok:true});
+  }catch(e){
+    console.error('[AI Games] save error:', e);
+    res.status(500).json({msg:'cannot save code'});
   }
 });
 
