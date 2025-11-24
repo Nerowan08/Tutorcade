@@ -100,6 +100,19 @@ main{flex:1}
 .form-row{margin-bottom:1rem}
 label{display:block;margin-bottom:.35rem;font-weight:600}
 
+/* AI studio */
+.ai-panel{padding:1.6rem;display:flex;flex-direction:column;gap:1rem}
+.ai-row{display:grid;grid-template-columns:1.5fr 1fr;gap:1rem;align-items:center}
+@media(max-width:900px){.ai-row{grid-template-columns:1fr}}
+#aiLoading{display:flex;align-items:center;gap:.9rem}
+.spinner{width:32px;height:32px;border-radius:50%;border:4px solid #cbd2df;border-top-color:var(--primary);animation:spin 1s linear infinite}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.ai-result{display:grid;grid-template-columns:2fr 1fr;gap:1.6rem;align-items:start}
+@media(max-width:1000px){.ai-result{grid-template-columns:1fr}}
+.code-box{width:100%;min-height:240px;padding:1rem;border:1px solid #cbd2df;border-radius:.8rem;font-family:ui-monospace,monospace;line-height:1.4;}
+.pill{display:inline-block;padding:.25rem .7rem;border-radius:999px;background:#e7ebf5;color:var(--primary);font-weight:600;font-size:.9rem}
+.community-card{display:flex;flex-direction:column;gap:.6rem;padding:1rem}
+
 /* footer */
 footer{font-size:.85rem;color:#666;text-align:center;padding:1rem 0}
 
@@ -117,6 +130,7 @@ footer{font-size:.85rem;color:#666;text-align:center;padding:1rem 0}
     <nav id="nav" class="hidden">
       <ul>
         <li data-target="plaza" data-i="nav_plaza">Game Library</li>
+        <li data-target="aiStudio">AI Game Studio</li>
         <li data-target="news">News</li>
         <li data-target="tasks">Daily Tasks</li>
         <li data-target="donate" data-i="nav_donate">Donate</li>
@@ -267,6 +281,73 @@ footer{font-size:.85rem;color:#666;text-align:center;padding:1rem 0}
       <span id="pageInfo"></span>
       <button id="nextBtn" class="btn btn-primary">Next</button>
     </div>
+  </div>
+</section>
+
+<!-- AI STUDIO -->
+<section id="aiStudio" class="section">
+  <div class="container">
+    <h2 style="margin-bottom:1rem">AI Game Studio</h2>
+    <p style="margin-bottom:1rem">输入你想练习的知识点，通义千问（qwen3-max）会帮你生成一款可玩的教学小游戏。勾选共享即可发布到社区。</p>
+
+    <div class="glass ai-panel">
+      <div class="ai-row">
+        <div>
+          <label for="aiTopic">学习主题 / 目标</label>
+          <input id="aiTopic" class="glass" placeholder="例如：AP 化学 — 热化学概念" style="width:100%;padding:.8rem">
+        </div>
+        <div>
+          <label for="aiAudience">面向人群</label>
+          <select id="aiAudience" class="glass" style="width:100%;padding:.8rem">
+            <option value="student">学生自学</option>
+            <option value="teacher">教师课堂互动</option>
+            <option value="study-group">学习小组</option>
+          </select>
+        </div>
+      </div>
+
+      <label style="display:flex;align-items:center;gap:.6rem">
+        <input type="checkbox" id="aiShare"> 将本次生成分享到社区
+        <span class="pill">可选</span>
+      </label>
+
+      <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
+        <button id="btnGenerateAI" class="btn btn-primary">生成学习游戏</button>
+        <div id="aiLoading" class="hidden"><div class="spinner"></div><span>AI 正在构建游戏，请稍候...</span></div>
+      </div>
+
+      <div id="aiResult" class="hidden ai-result">
+        <div class="glass" style="padding:1rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem">
+            <h3 style="margin:0">预览</h3>
+            <div style="display:flex;gap:.6rem;align-items:center">
+              <a id="aiPlayLink" class="btn btn-primary" target="_blank" rel="noopener">立即试玩</a>
+              <button id="btnToggleCode" class="btn">查看代码</button>
+            </div>
+          </div>
+          <iframe id="aiPreview" style="width:100%;height:420px;border:1px solid #d7dce6;border-radius:.8rem"></iframe>
+        </div>
+        <div class="glass" style="padding:1rem">
+          <h3 style="margin:0 0 .6rem">生成记录</h3>
+          <p id="aiMeta" style="color:#204368"></p>
+          <div id="aiCodeWrap" class="hidden">
+            <textarea id="aiCode" class="code-box"></textarea>
+            <button id="btnSaveCode" class="btn btn-primary" style="margin-top:.6rem">保存并刷新预览</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container" style="margin-top:2rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem">
+      <div>
+        <h3 style="margin-bottom:.3rem">社区分享</h3>
+        <p style="color:#204368">看看其他创作者的教学小游戏，直接试玩或查看代码灵感。</p>
+      </div>
+      <button id="btnRefreshCommunity" class="btn">刷新列表</button>
+    </div>
+    <div id="communityGrid" class="game-grid"></div>
   </div>
 </section>
 
@@ -436,6 +517,10 @@ const grid = $('#gameGrid');
 const pager = $('#pager'), prevBtn=$('#prevBtn'), nextBtn=$('#nextBtn'), pageInfo=$('#pageInfo');
 const catBtnsWrap = $('#catBtns');
 const searchInput = $('#searchInput');
+const aiTopic=$('#aiTopic'), aiAudience=$('#aiAudience'), aiShare=$('#aiShare');
+const aiLoading=$('#aiLoading'), aiResult=$('#aiResult'), aiPreview=$('#aiPreview');
+const aiPlayLink=$('#aiPlayLink'), aiMeta=$('#aiMeta'), aiCode=$('#aiCode'), aiCodeWrap=$('#aiCodeWrap');
+const communityGrid=$('#communityGrid');
 
 let ALL_CARDS=[], visibleCards=[], currentPage=1;
 const PAGE_SIZE=6;
@@ -499,6 +584,23 @@ function createGameCard(g){
   return card;
 }
 
+function createCommunityCard(g){
+  const card=document.createElement('div');
+  card.className='glass community-card';
+  card.dataset.path=g.path;
+  const thumb=document.createElement('div'); thumb.className='game-thumb'; thumb.textContent='AI Game';
+  const title=document.createElement('h3'); title.textContent=g.title;
+  const desc=document.createElement('p'); desc.textContent=g.description||'';
+  const meta=document.createElement('small'); meta.textContent=`作者: ${g.username||'Anonymous'} · ${new Date(g.created_at).toLocaleString()}`;
+  const btnRow=document.createElement('div'); btnRow.style.display='flex'; btnRow.style.gap='.6rem'; btnRow.style.flexWrap='wrap';
+  const play=document.createElement('a'); play.className='btn btn-primary'; play.href=g.path; play.target='_blank'; play.rel='noopener'; play.textContent='试玩';
+  const codeBtn=document.createElement('button'); codeBtn.className='btn'; codeBtn.dataset.path=g.path; codeBtn.dataset.action='view-code'; codeBtn.textContent='查看代码';
+  const codeBox=document.createElement('textarea'); codeBox.className='code-box hidden';
+  btnRow.appendChild(play); btnRow.appendChild(codeBtn);
+  card.appendChild(thumb); card.appendChild(title); card.appendChild(desc); card.appendChild(meta); card.appendChild(btnRow); card.appendChild(codeBox);
+  return card;
+}
+
 /* ---------------- REST：加载新闻 / 游戏 ---------------- */
 async function loadNews(){
   try{
@@ -524,6 +626,61 @@ async function loadGames(){
     applyFilter();
   }catch(e){
     alert('Failed to load games');
+  }
+}
+
+/* ---------------- AI Studio ---------------- */
+let currentAiPath='', currentAiId=null;
+function setAiLoading(on){
+  aiLoading.classList.toggle('hidden', !on);
+  const btn=$('#btnGenerateAI'); if(btn) btn.disabled=on;
+}
+
+async function generateAiGame(){
+  if(!api.token){ alert('请先登录再生成'); show('auth'); return; }
+  const topic = aiTopic.value.trim();
+  if(!topic) return alert('请输入学习主题');
+  setAiLoading(true);
+  aiResult.classList.add('hidden');
+  try{
+    const payload={topic, audience: aiAudience.value, share: aiShare.checked};
+    const r=await api.call('POST','/api/ai-games/generate',payload);
+    currentAiPath=r.path; currentAiId=r.aiId;
+    aiPlayLink.href=r.path;
+    aiPreview.src=r.path + '?t=' + Date.now();
+    aiCode.value=r.code||'';
+    aiCodeWrap.classList.add('hidden');
+    $('#btnToggleCode').textContent='查看代码';
+    aiMeta.textContent=`主题：${topic} ｜ 受众：${aiAudience.options[aiAudience.selectedIndex].text} ｜ ${r.shared?'已分享到社区':'本地保存'}`;
+    aiResult.classList.remove('hidden');
+    loadCommunity();
+  }catch(e){
+    alert(e.msg||'生成失败，请重试');
+  }finally{ setAiLoading(false); }
+}
+
+function toggleAiCode(){
+  const showCode = aiCodeWrap.classList.contains('hidden');
+  aiCodeWrap.classList.toggle('hidden', !showCode);
+  $('#btnToggleCode').textContent = showCode ? '隐藏代码' : '查看代码';
+}
+
+async function saveAiCode(){
+  if(!currentAiPath) return alert('请先生成一个游戏');
+  try{
+    await api.call('POST','/api/ai-games/save',{path: currentAiPath, code: aiCode.value});
+    aiPreview.src=currentAiPath + '?t=' + Date.now();
+    alert('已保存并刷新预览');
+  }catch(e){ alert(e.msg||'保存失败'); }
+}
+
+async function loadCommunity(){
+  try{
+    const list=await api.call('GET','/api/ai-games');
+    communityGrid.innerHTML='';
+    list.forEach(item=>communityGrid.appendChild(createCommunityCard(item)));
+  }catch(e){
+    communityGrid.innerHTML='<p>无法加载社区游戏</p>';
   }
 }
 
@@ -766,9 +923,32 @@ document.addEventListener('DOMContentLoaded', ()=>{
     playGame(gid, path);
   });
 
+  // AI Studio
+  $('#btnGenerateAI').addEventListener('click', generateAiGame);
+  $('#btnToggleCode').addEventListener('click', toggleAiCode);
+  $('#btnSaveCode').addEventListener('click', saveAiCode);
+  $('#btnRefreshCommunity').addEventListener('click', loadCommunity);
+  communityGrid.addEventListener('click', async (e)=>{
+    const btn=e.target.closest('button[data-action="view-code"]'); if(!btn) return;
+    const card=btn.closest('.community-card'); if(!card) return;
+    const area=card.querySelector('textarea');
+    if(area.classList.contains('hidden')){
+      try{
+        const html=await fetch(btn.dataset.path).then(r=>r.text());
+        area.value=html;
+        area.classList.remove('hidden');
+        btn.textContent='隐藏代码';
+      }catch(err){ alert('无法获取代码'); }
+    }else{
+      area.classList.add('hidden');
+      btn.textContent='查看代码';
+    }
+  });
+
   // 初始化数据
   loadNews();
   loadGames();
+  loadCommunity();
   autoLogin();
 });
 

@@ -72,6 +72,21 @@ CREATE TABLE IF NOT EXISTS saves (
   KEY ix_saves_created (created_at)
 ) ENGINE=InnoDB;
 
+/* ---------- ai_games（社区共享的 AI 生成游戏） ---------- */
+CREATE TABLE IF NOT EXISTS ai_games (
+  id          BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  user_id     INT UNSIGNED NULL,
+  title       VARCHAR(160) NOT NULL,
+  description VARCHAR(400) NULL,
+  audience    VARCHAR(40)  NULL,
+  path        VARCHAR(255) NOT NULL,
+  public      TINYINT(1)   NOT NULL DEFAULT 1,
+  created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+  KEY ix_ai_games_public (public),
+  KEY ix_ai_games_created (created_at)
+) ENGINE=InnoDB;
+
 /* ---------- 示例游戏数据（如已维护请删除本段） ---------- */
 INSERT INTO games (title,category,thumb,path,ready,`desc`) VALUES
  ('APbioworld Biology Quest','Biology','img/apbio_cover.jpg','apbio_quest.html',1,'Dive into AP Biology concepts, master cell cycles, genetics & more.'),
